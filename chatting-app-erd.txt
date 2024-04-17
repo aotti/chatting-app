@@ -1,6 +1,5 @@
 USER
 - setiap user mempunyai username & password untuk login
-- 1 user bisa mempunyai banyak group chat
 
 PROFILE
 - 1 user punya 1 profile
@@ -13,6 +12,7 @@ DIRECT MESSAGE
 - user bisa send message ke user lain (DM)
 
 GROUP CHAT
+- 1 user bisa mempunyai banyak group chat
 - setiap group chat mempunyai nama group
 - setiap group chat memiliki banyak user
 - setiap group chat memiliki banyak message
@@ -20,18 +20,26 @@ GROUP CHAT
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-table user
-- id, username, password, group_chat_id
+table users
+- id, username, password
 
-table profile
+table profiles
 - id, user_id, status (online/offline)
 
-table message
+table messages
 - id, user_id, message
 
-table direct_chat
-- id, user_id_from, user_id_to, message_id
+table direct_chats
+- id, user_id_from, user_id_to
 
-table group_chat
-- id, name, invite_code, user_id, message_id
+table group_chats
+- id, name, invite_code
 
+table group_chat_users
+- id, user_id, group_chat_id
+
+table direct_chat_messages
+- id, direct_chat_id, message_id
+
+table group_chat_messages
+- id, group_chat_id, message_id
