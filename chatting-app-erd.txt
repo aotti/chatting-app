@@ -30,16 +30,19 @@ table messages
 - id, user_id, message
 
 table direct_chats
-- id, user_id_from, user_id_to
+- id, user_id_from, user_id_to, message_id
+# ex: from user A, to user B, message text
 
 table group_chats
 - id, name, invite_code
 
 table group_chat_users
 - id, user_id, group_chat_id
-
-table direct_chat_messages
-- id, direct_chat_id, message_id
+# ex: user A, in group X
+# ex: user A, in group Y
+# ex: user B, in group Y
 
 table group_chat_messages
 - id, group_chat_id, message_id
+# ex: group Y, message text from user A
+# ex: group Y, message text from user B
