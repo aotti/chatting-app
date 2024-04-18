@@ -37,12 +37,7 @@ table group_chats
 - id, name, invite_code
 
 table group_chat_users
-- id, user_id, group_chat_id
-# ex: user A, in group X
-# ex: user A, in group Y
-# ex: user B, in group Y
-
-table group_chat_messages
-- id, group_chat_id, message_id
-# ex: group Y, message text from user A
-# ex: group Y, message text from user B
+- id, group_chat_id, user_id, message_id
+# ex: in group X, user A, message text
+# ex: in group Y, user A, message text
+# ex: in group Y, user B, message text
