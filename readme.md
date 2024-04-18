@@ -9,7 +9,9 @@ Tech stack
 
 **Table of Contents**
 
-[TOC]
+<!--ts-->
+    * [Database ERD](#database-erd)
+<!--te-->
 
 ### Database ERD
 ![chatting-app-erd](https://github.com/aotti/chatting-app/blob/main/docs/images/chatting_app_erd.png?raw=true)
