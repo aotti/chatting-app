@@ -23,7 +23,7 @@ export default function MenuButton() {
             { 
                 isMenuOpen 
                     // display menu item
-                    ? <div id="userMenu" className="border-2 border-black absolute right-3.5 p-2" ref={dropdownRef}>
+                    ? <div id="userMenu" className="absolute right-3.5" ref={dropdownRef}>
                         <MenuItem /> 
                     </div>
                     // hide menu item

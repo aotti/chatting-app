@@ -1,23 +1,24 @@
 import Link from "next/link"
 import HeaderContent from "./header/HeaderContent"
+import MainContent from "./main/MainContent"
 
 
 export default function Page() {
 
     return (
-        <>
+        <div className="grid grid-rows-8">
             {/* header */}
-            <header className="w-screen p-3 border-2 border-black">
+            <header className="row-span-1 h-fit p-3 border-2 border-black">
                 <HeaderContent />
             </header>
             {/* main */}
-            <main>
-                go to <Link href="/profiles">Profile Page</Link>
+            <main className="row-span-6 h-full">
+                <MainContent />
             </main>
             {/* footer */}
-            <footer>
-                <p> ©aotti 2024 </p>
+            <footer className="row-span-1 p-3 border-2 border-black">
+                <p className="h-full"> ©aotti 2024 </p>
             </footer>
-        </>
+        </div>
     )
 }
