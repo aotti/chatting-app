@@ -1,11 +1,14 @@
 import Link from "next/link"
+import HeaderContent from "./header/HeaderContent"
+
 
 export default function Page() {
+
     return (
         <>
             {/* header */}
-            <header>
-                <p className="text-2xl"> Chatting App </p>
+            <header className="w-screen p-3 border-2 border-black">
+                <HeaderContent />
             </header>
             {/* main */}
             <main>
