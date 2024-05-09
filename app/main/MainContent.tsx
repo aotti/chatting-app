@@ -5,12 +5,14 @@ export default function MainContent() {
             <div className="md:grid md:grid-cols-12 gap-2 p-2 h-full">
                 {/* user list container on mobile */}
                 <div className="
-                    border-2 border-black absolute top-1/3 w-10
-                    md:hidden"> user list </div>
+                    sticky top-1/3 w-10 -mt-12
+                    md:hidden sm:top-1/2"> 
+                    <button className="border-2 border-black"> user list </button>
+                </div>
                 {/* user list container */}
                 <div className="
-                    border-2 border-black p-2 hidden absolute w-1/2 h-1/2
-                    md:static md:block md:col-span-3 md:w-auto">
+                    border-2 border-black p-2 hidden absolute w-2/3 h-2/3
+                    md:static md:block md:col-span-3 md:w-auto md:h-full">
                     {/* search box */}
                     <div className="border-2 border-black">
                         search box

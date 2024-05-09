@@ -6,13 +6,13 @@ import MainContent from "./main/MainContent"
 export default function Page() {
 
     return (
-        <div className="grid grid-rows-8">
+        <div className="grid grid-rows-10">
             {/* header */}
             <header className="row-span-1 h-fit p-3 border-2 border-black">
                 <HeaderContent />
             </header>
             {/* main */}
-            <main className="row-span-6 h-full">
+            <main className="row-span-8 h-full">
                 <MainContent />
             </main>
             {/* footer */}
