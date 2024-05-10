@@ -1,4 +1,20 @@
+import HomePage from "./components/HomePage"
+import LoginPage from "./components/LoginPage"
+import RegisterPage from "./components/RegisterPage"
+
 export default function MainContent() {
+    const userList = [
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' },
+        { name: 'wawan' }
+    ]
     return (
         <>
             {/* main container */}
@@ -11,27 +27,57 @@ export default function MainContent() {
                 </div>
                 {/* user list container */}
                 <div className="
-                    border-2 border-black p-2 hidden absolute w-2/3 h-2/3
-                    md:static md:block md:col-span-3 md:w-auto md:h-full">
+                    border-2 border-black p-2 hidden absolute w-2/3
+                    md:static md:block md:col-span-3 md:w-auto">
                     {/* search box */}
                     <div className="border-2 border-black">
                         search box
                     </div>
                     {/* separator */}
                     <div className="my-4"></div>
-                    {/* user list */}
-                    <div className="border-2 border-black grid grid-cols-3">
-                        {/* name */}
-                        <span className="border-2 border-black col-span-2"> User </span>
-                        {/* chat button */}
-                        <span className="border-2 border-black"> Action </span>
+                    {/* user list box */}
+                    <div className="border-2 border-black p-2">
+                        {/* user list header */}
+                        <div className="grid grid-cols-3">
+                            {/* name */}
+                            <span className=" col-span-2"> User </span>
+                            {/* chat button */}
+                            <span className=" text-center"> Action </span>
+                        </div>
+                        {/* separator */}
+                        <hr className="border-2 border-black my-2" />
+                        {
+                            // the list
+                            userList.map((v, i) => {
+                                return (
+                                    <div className="grid grid-cols-3 mb-4 last:mb-0" key={i}>
+                                        <span className=" col-span-2"> {v.name} </span>
+                                        <button className="border-2 rounded-md"> chat </button>
+                                    </div>
+                                )
+                            })
+                        }
                     </div>
                 </div>
-                {/* main box */}
+                {/* main container */}
                 <div className="
                     border-2 border-black h-full
                     md:col-span-9">
-                    wawan
+                    {/* my profile */}
+                    <div className="
+                        border-2 border-black hidden absolute right-2 w-2/3 h-2/3
+                        md:w-1/4">
+                        my profile
+                    </div>
+                    {/* pages container */}
+                    <div className="table-cell align-middle text-center w-screen h-screen">
+                        {/* home page */}
+                        <HomePage display=""/>
+                        {/* register page */}
+                        <RegisterPage display="hidden"/>
+                        {/* login page */}
+                        <LoginPage display="hidden"/>
+                    </div>
                 </div>
             </div>
         </>
