@@ -1,6 +1,10 @@
+'use client'
+
+import { useState } from "react"
 import HomePage from "./components/HomePage"
 import LoginPage from "./components/LoginPage"
 import RegisterPage from "./components/RegisterPage"
+import Profile from "./components/Profile"
 
 export default function MainContent() {
     const userList = [
@@ -15,6 +19,12 @@ export default function MainContent() {
         { name: 'wawan' },
         { name: 'wawan' }
     ]
+    // get page for display
+    const [displayPage, setDisplayPage] = useState('home')
+    // page click handler
+    const getPageHandler = (page: string) => {
+        setDisplayPage(page)
+    }
     return (
         <>
             {/* main container */}
@@ -26,8 +36,8 @@ export default function MainContent() {
                     <button className="border-2 border-black"> user list </button>
                 </div>
                 {/* user list container */}
-                <div className="
-                    border-2 border-black p-2 hidden absolute w-2/3
+                <div className="hidden
+                    border-2 border-black p-2 absolute w-2/3
                     md:static md:block md:col-span-3 md:w-auto">
                     {/* search box */}
                     <div className="border-2 border-black">
@@ -64,19 +74,16 @@ export default function MainContent() {
                     border-2 border-black h-full
                     md:col-span-9">
                     {/* my profile */}
-                    <div className="
-                        border-2 border-black hidden absolute right-2 w-2/3 h-2/3
-                        md:w-1/4">
-                        my profile
-                    </div>
+                    <Profile />
                     {/* pages container */}
                     <div className="table-cell align-middle text-center w-screen h-screen">
-                        {/* home page */}
-                        <HomePage display=""/>
-                        {/* register page */}
-                        <RegisterPage display="hidden"/>
-                        {/* login page */}
-                        <LoginPage display="hidden"/>
+                        {
+                            displayPage == 'home' 
+                                ? <HomePage pageHandler={ getPageHandler } />
+                                : displayPage == 'register'
+                                    ? <RegisterPage pageHandler={ getPageHandler } />
+                                    : <LoginPage pageHandler={ getPageHandler } />
+                        }
                     </div>
                 </div>
             </div>

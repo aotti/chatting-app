@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from "react";
-import MenuItem from "./MenuItem";
 import clickOutsideElement from "../../helper";
 
 export default function MenuButton() {
@@ -24,7 +23,15 @@ export default function MenuButton() {
                 isMenuOpen 
                     // display menu item
                     ? <div id="userMenu" className="absolute right-3.5" ref={dropdownRef}>
-                        <MenuItem /> 
+                        {/* menu item */}
+                        <ul>
+                            <li>
+                                <button className="border-2 border-black w-full p-2"> My Profile </button>
+                            </li>
+                            <li>
+                                <button className="border-2 border-black w-full p-2"> Logout </button>
+                            </li>
+                        </ul>
                     </div>
                     // hide menu item
                     : null 
