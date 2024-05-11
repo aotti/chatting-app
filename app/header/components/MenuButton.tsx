@@ -1,9 +1,11 @@
 'use client'
 
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import clickOutsideElement from "../../helper";
+import { ProfileContext } from "../../context/ProfileContext";
 
 export default function MenuButton() {
+    // dropdown stuff
     const dropdownRef = useRef()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     // click outside dropdown
@@ -23,19 +25,31 @@ export default function MenuButton() {
                 isMenuOpen 
                     // display menu item
                     ? <div id="userMenu" className="absolute right-3.5" ref={dropdownRef}>
-                        {/* menu item */}
-                        <ul>
-                            <li>
-                                <button className="border-2 border-black w-full p-2"> My Profile </button>
-                            </li>
-                            <li>
-                                <button className="border-2 border-black w-full p-2"> Logout </button>
-                            </li>
-                        </ul>
+                        <MenuItem setIsMenuOpen={setIsMenuOpen} />
+                        {/* <span> You are not login yet. </span>  */}
                     </div>
                     // hide menu item
                     : null 
             }
         </div>
+    )
+}
+
+function MenuItem({ setIsMenuOpen }) {
+    // profile context
+    const { setShowMyProfile } = useContext(ProfileContext)
+
+    return (
+        <ul>
+            <li>
+                <button className="border-2 border-black w-full p-2" onClick={() => {
+                    setShowMyProfile(true)
+                    setIsMenuOpen(false)
+                    }}> My Profile </button>
+            </li>
+            <li>
+                <button className="border-2 border-black w-full p-2"> Logout </button>
+            </li>
+        </ul>
     )
 }
