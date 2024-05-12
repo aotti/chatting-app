@@ -7,6 +7,7 @@ import RegisterPage from "./components/RegisterPage"
 import Profile from "./components/Profile"
 import { ProfileContext } from "../context/ProfileContext"
 import UserList from "./components/UserList"
+import ChattingPage from "./components/ChattingPage"
 
 export default function MainContent() {
     // get page for display
@@ -15,25 +16,31 @@ export default function MainContent() {
     const getPageHandler = (page: string) => {
         setDisplayPage(page)
     }
+    // display user list
+    const [showUserList, setShowUserList] = useState(false)
     // profile state
     const { showMyProfile, showOtherProfile } = useContext(ProfileContext)
-    console.log(showOtherProfile);
-    
     
     return (
         <>
             {/* main container */}
             <div className="md:grid md:grid-cols-12 gap-2 p-2 h-full">
                 {/* user list container on mobile */}
-                <div className="
-                    sticky top-1/3 w-10 -mt-16
-                    md:hidden sm:top-1/2"> 
-                    <button className="border-2 border-black"> user list </button>
+                <div className={`${showUserList ? 'hidden' : null}
+                    sticky top-1/3 w-fit invert -mt-12
+                    md:hidden sm:top-1/2`}> 
+                    <ShowUserListButton showUserList={showUserList} setShowUserList={setShowUserList} />
                 </div>
                 {/* user list container */}
-                <div className="
-                    border-2 border-black p-2 absolute w-2/3
-                    md:static md:block md:col-span-3 md:w-auto">
+                <div className={`${showUserList ? null : 'hidden'}
+                    absolute border-2 border-black p-2 w-2/3
+                    md:static md:block md:col-span-3 md:w-auto`}>
+                    {/* user list container on mobile */}
+                    <div className={`${showUserList ? null : 'hidden'}
+                        w-fit invert mb-2
+                        md:hidden sm:top-1/2`}> 
+                        <ShowUserListButton showUserList={showUserList} setShowUserList={setShowUserList} />
+                    </div>
                     {/* search box */}
                     <div className="border-2 border-black">
                         search box
@@ -45,7 +52,7 @@ export default function MainContent() {
                             ? /* other's profile */
                             <Profile profileClassName="md:w-auto" userData={showOtherProfile[1]} />
                             : /* user list box */
-                            <UserList />
+                            <UserList pageHandler={ getPageHandler } />
                     }
                 </div>
                 {/* main container */}
@@ -61,11 +68,22 @@ export default function MainContent() {
                                 ? <HomePage pageHandler={ getPageHandler } />
                                 : displayPage == 'register'
                                     ? <RegisterPage pageHandler={ getPageHandler } />
-                                    : <LoginPage pageHandler={ getPageHandler } />
+                                    : displayPage == 'login'
+                                        ? <LoginPage pageHandler={ getPageHandler } />
+                                        : <ChattingPage pageHandler={ getPageHandler } />
                         }
                     </div>
                 </div>
             </div>
         </>
+    )
+}
+
+function ShowUserListButton({ showUserList, setShowUserList }) {
+    return (
+        <button className="flex border-2 border-black" onClick={() => setShowUserList(b => !b)}>
+            <img src="./img/users.png" alt="user list" width={40} />
+            { showUserList && <span className="invert my-auto px-2"> Hide </span> }
+        </button>
     )
 }
