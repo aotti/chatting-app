@@ -1,5 +1,5 @@
 import { useContext } from "react"
-import { ProfileContext } from "../../context/ProfileContext"
+import { ProfileContext } from "../../../context/ProfileContext"
 
 export default function UserList({pageHandler}: {pageHandler: (page: string) => void}) {
     const userList = [

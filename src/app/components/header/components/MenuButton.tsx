@@ -1,8 +1,8 @@
 'use client'
 
 import { useContext, useRef, useState } from "react";
-import clickOutsideElement from "../../helper";
-import { ProfileContext } from "../../context/ProfileContext";
+import { clickOutsideElement } from "../../helper-click";
+import { ProfileContext } from "../../../context/ProfileContext";
 
 export default function MenuButton() {
     // dropdown stuff

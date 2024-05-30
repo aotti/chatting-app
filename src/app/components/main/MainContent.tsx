@@ -5,7 +5,7 @@ import HomePage from "./components/HomePage"
 import LoginPage from "./components/LoginPage"
 import RegisterPage from "./components/RegisterPage"
 import Profile from "./components/Profile"
-import { ProfileContext } from "../context/ProfileContext"
+import { ProfileContext } from "../../context/ProfileContext"
 import UserList from "./components/UserList"
 import ChattingPage from "./components/ChattingPage"
 

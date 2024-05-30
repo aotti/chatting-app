@@ -1,6 +1,6 @@
 import { MutableRefObject, useEffect } from "react";
 
-export default function clickOutsideElement(ref: MutableRefObject<any>, handler: () => void) {
+export function clickOutsideElement(ref: MutableRefObject<any>, handler: () => void) {
     useEffect(() => {
         const listener = (ev: Event) => {
             // do nothing if clicking ref's element or descendent elements

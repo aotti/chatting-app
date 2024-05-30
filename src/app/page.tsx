@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, Dispatch, SetStateAction } from "react"
-import HeaderContent from "./header/HeaderContent"
-import MainContent from "./main/MainContent"
+import HeaderContent from "./components/header/HeaderContent"
+import MainContent from "./components/main/MainContent"
 import { IProfileUser, ProfileContext } from "./context/ProfileContext"
 
 

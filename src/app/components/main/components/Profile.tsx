@@ -1,6 +1,6 @@
 import { useContext, useRef } from "react"
-import { ProfileContext } from "../../context/ProfileContext"
-import clickOutsideElement from "../../helper"
+import { ProfileContext } from "../../../context/ProfileContext"
+import { clickOutsideElement } from "../../helper-click";
 
 export default function Profile({ profileClassName, userData }: { profileClassName: string, userData: { id: number; name: string; status: string } }) {
     // profile context
