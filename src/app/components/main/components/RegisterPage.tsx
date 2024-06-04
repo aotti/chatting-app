@@ -1,5 +1,5 @@
 import { FormEvent } from "react";
-import { fetcher, formInputLength, qS } from "../../helper";
+import { fetcher, formInputLength, qS, sha256 } from "../../helper";
 import { IRegisterPayload, IResponse } from "../../../types";
 
 export default function RegisterPage({pageHandler}: {pageHandler: (page: string) => void}) {
@@ -69,7 +69,7 @@ async function registerAccount(ev: FormEvent<HTMLFormElement>) {
         is_login: false,
         display_name: formInputs[0].value,
         username: formInputs[1].value,
-        password: formInputs[2].value,
+        password: sha256(formInputs[2].value),
         confirm_password: formInputs[3].value
     }
     
@@ -93,7 +93,7 @@ async function registerAccount(ev: FormEvent<HTMLFormElement>) {
     successMessage.textContent = ''
     // response api
     switch(registerResponse.status) {
-        case 200: 
+        case 201: 
             successMessage.textContent = 'register success! redirect to home..'
             errorMessage.textContent = ``
             setTimeout(() => {

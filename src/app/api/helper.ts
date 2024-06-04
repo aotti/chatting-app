@@ -1,5 +1,4 @@
 import { IResponse } from "../types";
-import { createHash } from "crypto"
 
 export function respond(s: number, m: string | object, d: any[]): IResponse {
     return {
@@ -25,9 +24,4 @@ export function api_action(pathname: string, method: string) {
             altMethod = 'update'; break
     }
     return `${altMethod} ${action}`
-}
-
-export function sha256(text: string) {
-    const hash = createHash('sha256').update(text).digest('hex')
-    return hash
 }

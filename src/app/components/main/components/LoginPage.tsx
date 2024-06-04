@@ -1,13 +1,17 @@
-import { FormEvent, KeyboardEvent } from "react";
-import { fetcher, formInputLength, qS } from "../../helper";
+import { Dispatch, FormEvent, SetStateAction, useContext } from "react";
+import { fetcher, formInputLength, qS, sha256 } from "../../helper";
 import { ILoginPayload, IResponse } from "../../../types";
+import { LoginContext, LoginProfileType } from "../../../context/LoginContext";
 
 export default function LoginPage({pageHandler}: {pageHandler: (page: string) => void}) {
+    // login set state
+    const { setIsLogin } = useContext(LoginContext)
+
     return (
         <div className="
             mx-auto p-2 border-2 border-black rounded-md
             lg:w-1/2 ">
-            <form className="grid grid-rows-3 gap-4" onSubmit={(event) => loginAccount(event)}>
+            <form className="grid grid-rows-3 gap-4" onSubmit={(event) => loginAccount(event, setIsLogin)}>
                 {/* username */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="username"> Username </label>
@@ -41,7 +45,7 @@ export default function LoginPage({pageHandler}: {pageHandler: (page: string) =>
     )
 }
 
-async function loginAccount(ev: FormEvent<HTMLFormElement>) {
+async function loginAccount(ev: FormEvent<HTMLFormElement>, setIsLogin: Dispatch<SetStateAction<[boolean, LoginProfileType]>>) {
     ev.preventDefault()
 
     // message container
@@ -53,24 +57,32 @@ async function loginAccount(ev: FormEvent<HTMLFormElement>) {
     // get form input values
     const formData: ILoginPayload = {
         username: formInputs[0].value,
-        password: formInputs[1].value
+        password: sha256(formInputs[1].value)
     }
     // login account
     // fetch options
     const loginFetchOptions: RequestInit = {
-        method: 'GET'
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify(formData)
     }
-    // url params
-    const loginParams = `username=${formData.username}&password=${formData.password}`
     // fetching
     successMessage.textContent = 'loading..'
-    const loginResponse: IResponse = await (await fetcher(`/user/login?${loginParams}`, loginFetchOptions)).json()
+    const loginResponse: IResponse = await (await fetcher(`/user/login`, loginFetchOptions)).json()
     successMessage.textContent = ''
     // response api
     switch(loginResponse.status) {
         case 200: 
+            console.log(loginResponse);
+            
             successMessage.textContent = 'login success!'
             errorMessage.textContent = ``
+            // change home page to welcome
+            setIsLogin([true, loginResponse.data[0]]);
+            // return to home
+            (qS('#return_home') as HTMLButtonElement).click()
             break
         default: 
             errorMessage.textContent = `${loginResponse.status}: ${loginResponse.message}`

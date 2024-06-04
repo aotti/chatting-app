@@ -13,6 +13,8 @@ interface IProfileStates {
     setShowOtherProfile: Dispatch<SetStateAction<[boolean, IProfileUser]>>;
 }
 
+// createContext used for send useState var to any child component
+// no matter how deep is the component
 export const ProfileContext = createContext<IProfileStates>({
     showMyProfile: false,
     setShowMyProfile: () => false,

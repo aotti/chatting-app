@@ -5,7 +5,7 @@ export class DatabaseQueries {
     private sb = supabase()
     private prefix = 'chat_app_'
 
-    select(queryObject: IQuerySelect): PG_PromiseType {
+    select<T>(queryObject: IQuerySelect): PG_PromiseType<T> {
         // select data
         const selectAllDataFromDB = async () => {
             // default limit
@@ -19,8 +19,13 @@ export class DatabaseQueries {
             // run query 
             if(queryObject.function) {
                 // run function
-                const {data, error} = await this.sb.rpc(queryObject.function) 
-                return {data: data, error: error}
+                const {data, error} = queryObject.function[1]
+                                        // function with parameter
+                                        ? await this.sb.rpc(queryObject.function[0])
+                                        .ilike('username', `%${queryObject.function[1]}%`)
+                                        // function without parameter
+                                        : await this.sb.rpc(queryObject.function[0])  
+                return {data: data as T[], error: error}
             }
             else if(queryObject.whereColumn) {
                 // where condition
@@ -29,32 +34,32 @@ export class DatabaseQueries {
                                     .eq(queryObject.whereColumn as string, queryObject.whereValue) // where condition
                                     .range(rangeMin, rangeMax) // limit, how many data will be retrieved
                                     .order('id', {ascending: true}) // order data by..
-                return {data: data, error: error}
+                return {data: data as T[], error: error}
             }
             else {
                 const {data, error} = await this.sb.from(this.prefix + queryObject.table)
                                     .select(queryObject.selectColumn as string) // select columns
                                     .range(rangeMin, rangeMax) // limit, how many data will be retrieved
                                     .order('id', {ascending: true}) // order data by..
-                return {data: data, error: error}
+                return {data: data as T[], error: error}
             }
         }
         return selectAllDataFromDB()
     }
 
-    insert(queryObject: IQueryInsert): PG_PromiseType {
+    insert<T>(queryObject: IQueryInsert): PG_PromiseType<T> {
         // insert data 
         const insertDataToDB = async () => {
             // run query
             const {data, error} = await this.sb.from(this.prefix + queryObject.table)
                                 .insert(queryObject.insertColumn)
                                 .select(queryObject.selectColumn as string)
-            return {data: data, error: error}
+            return {data: data as T[], error: error}
         }
         return insertDataToDB()
     }
 
-    update(queryObject: IQueryUpdate): PG_PromiseType {
+    update<T>(queryObject: IQueryUpdate): PG_PromiseType<T> {
         // update data
         const updateDataToDB = async () => {
             // run query
@@ -62,8 +67,76 @@ export class DatabaseQueries {
                                 .update(queryObject.updateColumn)
                                 .eq(queryObject.whereColumn, queryObject.whereValue)
                                 .select(queryObject.selectColumn as string)
-            return {data: data, error: error}
+            return {data: data as T[], error: error}
         }
         return updateDataToDB()
+    }
+
+    /**
+     * 
+     * @param type table name without prefix, ex: abc_words > words
+     * @param columns choose columns by numbers, each type has different columns
+     * @returns selected columns 
+     * @description example: 
+     * 
+     * - table words = select 'id, category, word' = 123; select 'id, word' = 13;
+     * 
+     * list of column:
+     * - users - id | is_login | username | password | display_name | created_at | updated_at | deleted_at
+     * - profiles - id | user_id (id, is_login) | description | created_at | updated_at | deleted_at
+     * - messages - 
+     * - direct_chats - 
+     * - group_chats - 
+     * - group_chat_users - 
+     * - group_chat_messages - 
+     */
+    columnSelector(type: string, columns: number) {
+        // to save selected column 
+        const selectedColumns = []
+        // for users table
+        if(type === 'users') {
+            const pickerList: string[] = ['id', 'is_login', 'username', 'password', 'display_name', 'created_at', 'updated_at', 'deleted_at']
+            selectedColumns.push(columnPicker(pickerList))
+        }
+        // for profiles table
+        else if(type === 'profiles') {
+            const pickerList: string[] = ['id', 'user_id(is_login, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
+            selectedColumns.push(columnPicker(pickerList))
+        }
+        // for messages table
+        else if(type === 'messages') {
+            // null
+        }
+        // for direct_chats table
+        else if(type === 'direct_chats') {
+            // null
+        }
+        // for group_chats table
+        else if(type === 'group_chats') {
+            // null
+        }
+        // for group_chat_users table
+        else if(type === 'group_chat_users') {
+            // null
+        }
+        // for group_chat_messages table
+        else if(type === 'group_chat_messages') {
+            // null
+        }
+        // return selected columns
+        return selectedColumns.join(', ')
+
+        // looping columns
+        function columnPicker(pickerList: string[]) {
+            // temp col container
+            const colsPicked = []
+            // convert number to string for looping to work
+            const cols = columns.toString()
+            for(let col of cols) {
+                // push selected column to container
+                colsPicked.push(pickerList[+col - 1])
+            }
+            return colsPicked
+        }
     }
 }

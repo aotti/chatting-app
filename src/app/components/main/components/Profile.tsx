@@ -3,7 +3,7 @@ import { ProfileContext } from "../../../context/ProfileContext"
 import { clickOutsideElement } from "../../helper-click";
 
 export default function Profile({ profileClassName, userData }: { profileClassName: string, userData: { id: number; name: string; status: string } }) {
-    // profile context
+    // profile set state
     const { setShowMyProfile, setShowOtherProfile } = useContext(ProfileContext)
     // ref 
     const profileRef = useRef(null)
@@ -21,6 +21,8 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
             md:w-1/4`} 
             ref={profileRef}>
             {
+                // ### BERHUBUNGAN DGN AUTH, KALO SUDAH BISA LOGIN, CEK DGN USERNAME
+                // if show other profile, show 'back' button
                 userData.id !== 1 && 
                 <button className=" bg-slate-400 rounded-md py-1 px-2" 
                     onClick={() => setShowOtherProfile([false, defaultProfile]) }

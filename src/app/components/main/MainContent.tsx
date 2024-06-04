@@ -70,7 +70,7 @@ export default function MainContent() {
                                     ? <RegisterPage pageHandler={ getPageHandler } />
                                     : displayPage == 'login'
                                         ? <LoginPage pageHandler={ getPageHandler } />
-                                        : <ChattingPage pageHandler={ getPageHandler } />
+                                        : <ChattingPage />
                         }
                     </div>
                 </div>

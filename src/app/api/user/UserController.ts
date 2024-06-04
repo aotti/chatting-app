@@ -1,38 +1,12 @@
 import { DatabaseQueries } from "../../config/DatabaseQueries"
-import { respond, sha256 } from "../helper"
-import { ILoginPayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
+import { respond } from "../helper"
+import { ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse, LoginType } from "../../types"
 import filter from "../filter"
+import { SignJWT } from "jose"
+import { cookies } from "next/headers"
 
 export default class UserController {
     private dq = new DatabaseQueries()
-
-    async getUsers(action: string) {
-        let result: IResponse
-
-        try {
-            const queryObject: Pick<IQuerySelect, 'table' | 'selectColumn'> = {
-                table: 'users',
-                selectColumn: '*'
-            }
-            const selectResponse = await this.dq.select(queryObject as IQuerySelect)
-            // fail 
-            if(selectResponse.data === null) {
-                result = respond(500, selectResponse.error, [])
-            }
-            // success
-            else if(selectResponse.error === null) {
-                result = respond(200, `${action} success`, selectResponse.data)
-            }
-            // return response
-            return result
-        } catch (err) {
-            console.log(`error UserController getUsers`)
-            console.log(err)
-            // return response
-            result = respond(500, err.message, [])
-            return result
-        }
-    }
 
     async register(action: string, payload: Omit<IRegisterPayload, 'confirm_password'>) {
         let result: IResponse
@@ -43,8 +17,6 @@ export default class UserController {
         }
         
         try {
-            // hash password
-            payload.password = sha256(payload.password)
             // object to run query
             const queryObject: IQueryInsert = {
                 table: 'users',
@@ -54,14 +26,14 @@ export default class UserController {
                 }
             }
             // insert data
-            const insertResponse = await this.dq.insert(queryObject)
+            const insertResponse = await this.dq.insert<IRegisterPayload>(queryObject)
             // fail 
             if(insertResponse.data === null) {
                 result = respond(500, insertResponse.error, [])
             }
             // success
             else if(insertResponse.error === null) {
-                result = respond(200, `${action} success`, insertResponse.data)
+                result = respond(201, `${action} success`, insertResponse.data)
             }
             // return response
             return result
@@ -86,12 +58,12 @@ export default class UserController {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: '*',
+                selectColumn: this.dq.columnSelector('users', 345),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
             // select data
-            const selectResponse = await this.dq.select(queryObject)
+            const selectResponse = await this.dq.select<ILoginPayload>(queryObject)
             // fail 
             if(selectResponse.data === null) {
                 result = respond(500, selectResponse.error, [])
@@ -105,13 +77,14 @@ export default class UserController {
                 }
                 else {
                     // check password
-                    const checkPassword = selectResponse.data[0].password === sha256(payload.password)
+                    const checkPassword = selectResponse.data[0].password === payload.password
                     // wrong 
                     if(!checkPassword)
                         result = respond(400, `username/password doesnt match!`, [])
                     // correct
-                    else
-                        result = await this.loggedIn(action, payload.username)
+                    else {
+                        result = await this.loggedIn(action, selectResponse.data[0])
+                    }
                 }
             }
             // return response
@@ -125,7 +98,7 @@ export default class UserController {
         }
     }
 
-    async loggedIn(action: string, username: string) {
+    async loggedIn(action: string, data: ILoginPayload) {
         let result: IResponse
 
         try {
@@ -133,9 +106,9 @@ export default class UserController {
             // object to run query
             const queryObject: IQueryUpdate = {
                 table: 'users',
-                selectColumn: '*',
+                selectColumn: this.dq.columnSelector('users', 135),
                 whereColumn: 'username',
-                whereValue: username,
+                whereValue: data.username,
                 get updateColumn() {
                     return { 
                         is_login: true,
@@ -144,14 +117,14 @@ export default class UserController {
                 }
             }
             // update data
-            const updateResponse = await this.dq.update(queryObject)
+            const updateResponse = await this.dq.update<ILoginPayload>(queryObject)
             // fail 
             if(updateResponse.data === null) {
                 result = respond(500, updateResponse.error, [])
             }
             // success
             else if(updateResponse.error === null) {
-                result = respond(200, `${action} success`, updateResponse.data)
+                result = await this.getProfiles(action, updateResponse.data[0])
             }
             // return response
             return result
@@ -162,5 +135,96 @@ export default class UserController {
             result = respond(500, err.message, [])
             return result
         }
+    }
+
+    async getProfiles<T extends LoginType>(action: string, payload: T) {
+        let result: IResponse
+        // filter payload
+        const filteredPayload = !payload.id ? filter(action, payload as IProfilePayload) : null
+        if(filteredPayload?.status === 400) {
+            return filteredPayload
+        }
+        
+        try {
+            // object for select query
+            const queryObject: IQuerySelect = payload.id
+                ? {
+                    table: 'profiles',
+                    selectColumn: this.dq.columnSelector('profiles', 23),
+                    whereColumn: 'user_id',
+                    whereValue: payload.id
+                }
+                : {
+                    table: 'profiles',
+                    function: ['join_users_profiles', payload.username]
+                }
+            const selectResponse = await this.dq.select<IProfilePayload>(queryObject)
+            // fail 
+            if(selectResponse.data === null) {
+                result = respond(500, selectResponse.error, [])
+            }
+            // success
+            else if(selectResponse.error === null) {
+                // select response for query
+                // modify data for easier reading
+                type NewSelectResDataType = Record<'username' | 'display_name' | 'is_login' | 'description', string | boolean>
+                let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
+                // login case
+                if(selectResponse.data[0].user_id?.username) {
+                    newSelectResData = [{
+                        username: selectResponse.data[0].user_id.username,
+                        display_name: selectResponse.data[0].user_id.display_name,
+                        is_login: selectResponse.data[0].user_id.is_login,
+                        description: selectResponse.data[0].description
+                    }]
+                    // create access token 
+                    const accessToken = await this.generateAccessToken(newSelectResData[0])
+                    // create refresh token
+                    const refreshSecret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET)
+                    const refreshToken = await new SignJWT(newSelectResData[0])
+                        .setProtectedHeader({ alg: 'HS256' })
+                        .setAudience('chatting app')
+                        .setIssuer('chatting app')
+                        .setSubject(newSelectResData[0].username as string)
+                        .sign(refreshSecret)
+                    // get current time
+                    const hours = 6
+                    const timeNow = new Date().getTime() + (hours*60*60*1000)
+                    // save to http cookie
+                    // save access token
+                    cookies().set('accessToken', accessToken, {
+                        expires: timeNow,
+                        path: '/'
+                    })
+                    // save refresh token
+                    cookies().set('refreshToken', refreshToken)
+                }
+                // get user case
+                else {
+                    newSelectResData = selectResponse.data
+                }
+                // response
+                result = respond(200, `${action} success`, newSelectResData)
+            }
+            // return response
+            return result
+        } catch (err) {
+            console.log(`error UserController getUsers`)
+            console.log(err)
+            // return response
+            result = respond(500, err.message, [])
+            return result
+        }
+    }
+    
+    private async generateAccessToken(newSelectResData) {
+        const accessSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
+        return await new SignJWT(newSelectResData)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setAudience('chatting app')
+            .setIssuer('chatting app')
+            .setSubject(newSelectResData.username as string)
+            .setExpirationTime('5m')
+            .sign(accessSecret)
     }
 }

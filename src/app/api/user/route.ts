@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import UserController from "./UserController";
 import { api_action } from "../helper";
+import { IProfilePayload } from "../../types";
 
 const userController = new UserController()
 
 export async function GET(req: NextRequest) {
     // create api action
     const action = api_action(req.nextUrl.pathname, req.method)
+    // query param
+    const key = Array.from(req.nextUrl.searchParams.keys())[0]
+    const queryPayload = {
+        [key]: req.nextUrl.searchParams.get('username')
+    }
     // get users
-    const result = await userController.getUsers(action)
+    const result = await userController.getProfiles(action, queryPayload)
     // response from controller
     return NextResponse.json(result, { status: result.status })
 }

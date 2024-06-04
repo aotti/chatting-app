@@ -1,4 +1,4 @@
-export default function ChattingPage({pageHandler}: {pageHandler: (page: string) => void}) {
+export default function ChattingPage() {
     return (
         <div className="grid grid-rows-8 h-full p-2">
             {/* chat box */}

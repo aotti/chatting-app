@@ -1,4 +1,5 @@
 import { KeyboardEvent } from "react"
+import { createHash } from "crypto"
 
 /**
  * @param value html tag / id / className
@@ -21,4 +22,9 @@ export function formInputLength(ev: KeyboardEvent<HTMLInputElement>) {
         ev.currentTarget.style.boxShadow = '0 0 10px inset crimson'
     else 
         ev.currentTarget.style.removeProperty('box-shadow')
+}
+
+export function sha256(text: string) {
+    const hash = createHash('sha256').update(text).digest('hex')
+    return hash
 }

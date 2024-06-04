@@ -1,40 +1,29 @@
-'use client'
+import { jwtVerify } from "jose"
+import { cookies } from "next/headers"
+import Index from "./components"
 
-import { useState, Dispatch, SetStateAction } from "react"
-import HeaderContent from "./components/header/HeaderContent"
-import MainContent from "./components/main/MainContent"
-import { IProfileUser, ProfileContext } from "./context/ProfileContext"
-
-
-export default function Page() {
-    // show my profile
-    const [showMyProfile, setShowMyProfile] = useState(false)
-    // show other profile
-    const [showOtherProfile, setShowOtherProfile] = useState([false, {id: 0, name:'', status:''}])
-    // profile props
-    const profileStates = {
-        showMyProfile: showMyProfile,
-        setShowMyProfile: setShowMyProfile,
-        showOtherProfile: showOtherProfile as [boolean, IProfileUser],
-        setShowOtherProfile: setShowOtherProfile as Dispatch<SetStateAction<[boolean, IProfileUser]>>
-    }
+export default async function Page() {
+    // get cookie
+    const token = cookies().get('accessToken')?.value
+    // cookie expired
+    if(!token) return <Index />
     
-    return (
-        <div className="grid grid-rows-10">
-            <ProfileContext.Provider value={ profileStates }>
-                {/* header */}
-                <header className="row-span-1 h-fit p-3 border-2 border-black">
-                    <HeaderContent />
-                </header>
-                {/* main */}
-                <main className="row-span-8 h-full">
-                    <MainContent />
-                </main>
-                {/* footer */}
-                <footer className="row-span-1 p-3 border-2 border-black">
-                    <p className="h-full"> ©aotti 2024 </p>
-                </footer>
-            </ProfileContext.Provider>
-        </div>
-    )
+    try {
+        // verify access token
+        // if invalid check refresh token, then create new access token
+        const accessSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
+        const verify = await jwtVerify(token, accessSecret)
+        // user payload
+        const verifiedUser = {
+            username: verify.payload.username,
+            display_name: verify.payload.display_name,
+            is_login: verify.payload.is_login,
+            description: verify.payload.description
+        }
+        // send payload to home
+        return <Index verified={verifiedUser} />
+    } catch (error) {
+        // token expired
+        if(error) return <Index />
+    }
 }
