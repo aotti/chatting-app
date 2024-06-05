@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import UserController from "./UserController";
 import { api_action } from "../helper";
-import { IProfilePayload } from "../../types";
 
 const userController = new UserController()
 

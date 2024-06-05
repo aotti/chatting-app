@@ -79,6 +79,10 @@ async function loginAccount(ev: FormEvent<HTMLFormElement>, setIsLogin: Dispatch
             
             successMessage.textContent = 'login success!'
             errorMessage.textContent = ``
+            // save token to local storage
+            window.localStorage.setItem('accessToken', loginResponse.data[0].token)
+            // delete token before send to variable
+            delete loginResponse.data[0].token
             // change home page to welcome
             setIsLogin([true, loginResponse.data[0]]);
             // return to home

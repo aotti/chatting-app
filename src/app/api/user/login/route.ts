@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import UserController from "../UserController";
 import { api_action } from "../../helper";
 import { ILoginPayload } from "../../../types";
-import { cookies } from "next/headers";
 
 const userController = new UserController()
 
@@ -12,7 +11,7 @@ export async function POST(req: NextRequest) {
     // get payload from client
     const bodyPayload: ILoginPayload = await req.json()
     // login
-    const result = await userController.login(action, bodyPayload)
+    const result = await userController.login(action, bodyPayload, req)
     // return response
     return NextResponse.json(result, { status: result.status })
 }

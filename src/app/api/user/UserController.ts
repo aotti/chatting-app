@@ -4,9 +4,12 @@ import { ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdat
 import filter from "../filter"
 import { SignJWT } from "jose"
 import { cookies } from "next/headers"
+import { NextRequest } from "next/server"
+import AuthController from "../token/AuthController"
 
 export default class UserController {
     private dq = new DatabaseQueries()
+    private authController = new AuthController()
 
     async register(action: string, payload: Omit<IRegisterPayload, 'confirm_password'>) {
         let result: IResponse
@@ -46,7 +49,7 @@ export default class UserController {
         }        
     }
 
-    async login(action: string, payload: ILoginPayload) {
+    async login(action: string, payload: ILoginPayload, req: NextRequest) {
         let result: IResponse
         // filter payload
         const filteredPayload = filter(action, payload)
@@ -83,7 +86,7 @@ export default class UserController {
                         result = respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
-                        result = await this.loggedIn(action, selectResponse.data[0])
+                        result = await this.loggedIn(action, selectResponse.data[0], req)
                     }
                 }
             }
@@ -98,7 +101,7 @@ export default class UserController {
         }
     }
 
-    async loggedIn(action: string, data: ILoginPayload) {
+    async loggedIn(action: string, data: ILoginPayload, req: NextRequest) {
         let result: IResponse
 
         try {
@@ -124,7 +127,7 @@ export default class UserController {
             }
             // success
             else if(updateResponse.error === null) {
-                result = await this.getProfiles(action, updateResponse.data[0])
+                result = await this.getProfiles(action, updateResponse.data[0], req)
             }
             // return response
             return result
@@ -137,7 +140,7 @@ export default class UserController {
         }
     }
 
-    async getProfiles<T extends LoginType>(action: string, payload: T) {
+    async getProfiles<T extends LoginType>(action: string, payload: T, req?: NextRequest) {
         let result: IResponse
         // filter payload
         const filteredPayload = !payload.id ? filter(action, payload as IProfilePayload) : null
@@ -167,7 +170,13 @@ export default class UserController {
             else if(selectResponse.error === null) {
                 // select response for query
                 // modify data for easier reading
-                type NewSelectResDataType = Record<'username' | 'display_name' | 'is_login' | 'description', string | boolean>
+                type NewSelectResDataType = {
+                    username: string;
+                    display_name: string;
+                    is_login: boolean;
+                    description: string;
+                    token?: string;
+                }
                 let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
                 // login case
                 if(selectResponse.data[0].user_id?.username) {
@@ -178,7 +187,7 @@ export default class UserController {
                         description: selectResponse.data[0].description
                     }]
                     // create access token 
-                    const accessToken = await this.generateAccessToken(newSelectResData[0])
+                    const accessToken = await this.authController.generateAccessToken(newSelectResData[0])
                     // create refresh token
                     const refreshSecret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET)
                     const refreshToken = await new SignJWT(newSelectResData[0])
@@ -187,17 +196,17 @@ export default class UserController {
                         .setIssuer('chatting app')
                         .setSubject(newSelectResData[0].username as string)
                         .sign(refreshSecret)
-                    // get current time
-                    const hours = 6
-                    const timeNow = new Date().getTime() + (hours*60*60*1000)
-                    // save to http cookie
-                    // save access token
-                    cookies().set('accessToken', accessToken, {
-                        expires: timeNow,
-                        path: '/'
-                    })
                     // save refresh token
-                    cookies().set('refreshToken', refreshToken)
+                    cookies().set('refreshToken', refreshToken, { 
+                        path: '/',
+                        domain: req.nextUrl.hostname,
+                        httpOnly: true 
+                    })
+                    // add token to response data
+                    newSelectResData[0] = {
+                        ...newSelectResData[0],
+                        token: accessToken
+                    }
                 }
                 // get user case
                 else {
@@ -215,16 +224,5 @@ export default class UserController {
             result = respond(500, err.message, [])
             return result
         }
-    }
-    
-    private async generateAccessToken(newSelectResData) {
-        const accessSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
-        return await new SignJWT(newSelectResData)
-            .setProtectedHeader({ alg: 'HS256' })
-            .setAudience('chatting app')
-            .setIssuer('chatting app')
-            .setSubject(newSelectResData.username as string)
-            .setExpirationTime('5m')
-            .sign(accessSecret)
     }
 }

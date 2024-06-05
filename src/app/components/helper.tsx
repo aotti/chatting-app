@@ -9,8 +9,10 @@ export function qS(value: string) {
     return document.querySelector(value)
 }
 
-export function fetcher(url, options) {
-    return fetch(`api${url}`, options)
+export function fetcher(endpoint, options) {
+    const host = process.env.API_URL || 'http://localhost:3000/api'
+    const url = host + endpoint
+    return fetch(url, options)
 }
 
 export function formInputLength(ev: KeyboardEvent<HTMLInputElement>) {
