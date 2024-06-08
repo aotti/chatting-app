@@ -3,7 +3,7 @@ import { LoginContext, LoginProfileType } from "../../../context/LoginContext"
 
 export default function HomePage({pageHandler}: {pageHandler: (page: string) => void}) {
     // login state
-    const { isLogin, setIsLogin } = useContext(LoginContext)
+    const { isLogin } = useContext(LoginContext)
 
     return (
         isLogin[0]
@@ -26,12 +26,12 @@ function LoginFalse({pageHandler}: {pageHandler: (page: string) => void}) {
             <p className=" text-xl"> Do you already have an account? </p>
             <div className=" mt-2">
                 {/* login button */}
-                <button className="border-2 border-black bg-green-600 rounded-md p-2 w-20"
+                <button className=" bg-green-500 rounded-md p-2 w-20 shadow-sm shadow-black"
                     onClick={() => pageHandler('login')}> Login </button>
                 {/* separator */}
                 <span className=" mx-4"></span>
                 {/* register button */}
-                <button className="border-2 border-black bg-blue-600 rounded-md p-2 w-20"
+                <button className=" bg-blue-500 rounded-md p-2 w-20 shadow-sm shadow-black"
                     onClick={() => pageHandler('register')}> Register </button>
             </div>
         </>

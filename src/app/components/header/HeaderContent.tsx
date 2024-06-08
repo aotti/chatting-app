@@ -4,8 +4,8 @@ export default function HeaderContent() {
     return (
         <nav className="grid grid-cols-3 justify-items-stretch">
             {/* logo */}
-            <div className="border-2 border-black w-44">
-                <img src="./img/logo.png" alt="logo"/>
+            <div className="w-44">
+                <img src="./img/logo.png" className="" alt="logo"/>
             </div>
             {/* app name */}
             <div className="">

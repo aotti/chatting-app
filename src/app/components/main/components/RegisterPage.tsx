@@ -5,35 +5,36 @@ import { IRegisterPayload, IResponse } from "../../../types";
 export default function RegisterPage({pageHandler}: {pageHandler: (page: string) => void}) {
     return (
         <div className="
-            mx-auto p-2 border-2 border-black rounded-md
+            mx-auto p-2 border-2 border-black rounded-md bg-green-500 dark:bg-green-600
             lg:w-1/2 ">
             <form className="grid grid-rows-5 gap-4" onSubmit={(event) => registerAccount(event)}>
                 {/* display name */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="display_name"> Name </label>
                     <input type="text" id="display_name" minLength={5} maxLength={16} required
-                        className="py-1"
+                        className="p-1 rounded-md dark:text-black"
+                        autoFocus
                         onKeyUp={(event) => formInputLength(event)}/>
                 </div>
                 {/* username */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="username"> Username </label>
                     <input type="text" id="username" minLength={5} maxLength={16} required
-                        className="py-1"
+                        className="p-1 rounded-md dark:text-black"
                         onKeyUp={(event) => formInputLength(event)}/>
                 </div>
                 {/* password */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="password"> Password </label>
                     <input type="password" id="password" minLength={8} required
-                        className="py-1"
+                        className="p-1 rounded-md dark:text-black"
                         onKeyUp={(event) => formInputLength(event)}/>
                 </div>
                 {/* confirm password */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="confirm_password"> Confirm Password </label>
                     <input type="password" id="confirm_password" minLength={8} required
-                        className="py-1"
+                        className="p-1 rounded-md dark:text-black"
                         onKeyUp={(event) => formInputLength(event)}/>
                 </div>
                 {/* message */}
@@ -45,10 +46,10 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                 </div>
                 {/* submit button */}
                 <div className="grid grid-cols-2">
-                    <button type="button" className="text-xl bg-slate-400 border-2 rounded-md w-36 p-1 mx-auto"
+                    <button type="button" className="text-xl bg-slate-400 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"
                         id="return_home"
                         onClick={() => pageHandler('home')}> Back </button>
-                    <button type="submit" className="text-xl bg-blue-600 border-2 rounded-md w-36 p-1 mx-auto"> Register </button>
+                    <button type="submit" className="text-xl bg-blue-500 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"> Register </button>
                 </div>
             </form>
         </div>

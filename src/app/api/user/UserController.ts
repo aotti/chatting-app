@@ -61,7 +61,7 @@ export default class UserController {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 345),
+                selectColumn: this.dq.columnSelector('users', 2345),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
@@ -86,7 +86,7 @@ export default class UserController {
                         result = respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
-                        result = await this.loggedIn(action, selectResponse.data[0], req)
+                        result = await this.loggedUser(action, selectResponse.data[0], req)
                     }
                 }
             }
@@ -101,7 +101,7 @@ export default class UserController {
         }
     }
 
-    async loggedIn(action: string, data: ILoginPayload, req: NextRequest) {
+    async loggedUser(action: string, data: ILoginPayload, req?: NextRequest) {
         let result: IResponse
 
         try {
@@ -109,12 +109,12 @@ export default class UserController {
             // object to run query
             const queryObject: IQueryUpdate = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 135),
+                selectColumn: this.dq.columnSelector('users', 1235),
                 whereColumn: 'username',
                 whereValue: data.username,
                 get updateColumn() {
                     return { 
-                        is_login: true,
+                        is_login: !data.is_login,
                         updated_at: dateNow.toISOString()
                     }
                 }
@@ -127,12 +127,18 @@ export default class UserController {
             }
             // success
             else if(updateResponse.error === null) {
-                result = await this.getProfiles(action, updateResponse.data[0], req)
+                // login case - get profile
+                if(req) result = await this.getProfiles(action, updateResponse.data[0], req)
+                // logout case - return response
+                else {
+                    delete updateResponse.data[0].id
+                    result = respond(204, action, updateResponse.data)
+                }
             }
             // return response
             return result
         } catch (err) {
-            console.log(`error UserController loggedIn`)
+            console.log(`error UserController loggedUser`)
             console.log(err)
             // return response
             result = respond(500, err.message, [])
@@ -219,6 +225,54 @@ export default class UserController {
             return result
         } catch (err) {
             console.log(`error UserController getUsers`)
+            console.log(err)
+            // return response
+            result = respond(500, err.message, [])
+            return result
+        }
+    }
+
+    async logout(action: string, payload: Pick<ILoginPayload, 'username'>) {
+        let result: IResponse
+        // filter payload
+        const filteredPayload = filter(action, payload)
+        if(filteredPayload.status === 400) {
+            return filteredPayload
+        }
+
+        try {
+            // object to run query
+            const queryObject: IQuerySelect = {
+                table: 'users',
+                selectColumn: this.dq.columnSelector('users', 23),
+                whereColumn: 'username',
+                whereValue: payload.username
+            }
+            // select data
+            const selectResponse = await this.dq.select<ILoginPayload>(queryObject)
+            // fail 
+            if(selectResponse.data === null) {
+                result = respond(500, selectResponse.error, [])
+            }
+            // success
+            else if(selectResponse.error === null) {
+                // ### CHECK IS LOGIN VALUE
+                const checkIsLogin = selectResponse.data[0].is_login === true
+                // if still logged in (true), set to logged out (false)
+                if(checkIsLogin) {
+                    // delete refresh token
+                    cookies().delete('refreshToken')
+                    // update user is_login
+                    result = await this.loggedUser(action, selectResponse.data[0])
+                }
+                else {
+                    result = respond(401, 'the action cannot be executed', [])
+                }
+            }
+            // return response
+            return result
+        } catch (err) {
+            console.log(`error UserController logout`)
             console.log(err)
             // return response
             result = respond(500, err.message, [])
