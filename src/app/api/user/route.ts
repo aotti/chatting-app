@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     // query param
     const key = Array.from(req.nextUrl.searchParams.keys())[0]
     const queryPayload = {
-        [key]: req.nextUrl.searchParams.get('username')
+        [key]: req.nextUrl.searchParams.get('display_name')
     }
     // get users
     const result = await userController.getProfiles(action, queryPayload)

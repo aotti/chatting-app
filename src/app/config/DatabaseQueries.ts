@@ -5,6 +5,16 @@ export class DatabaseQueries {
     private sb = supabase()
     private prefix = 'chat_app_'
 
+    async db_func<T>(queryObject: IQuerySelect | IQueryInsert | IQueryUpdate) {
+        // run function
+        const {data, error} = queryObject.function_args
+                                // function with parameter
+                                ? await this.sb.rpc(queryObject.function, queryObject.function_args)
+                                // function without parameter
+                                : await this.sb.rpc(queryObject.function)  
+        return {data: data as T[], error: error}
+    }
+
     select<T>(queryObject: IQuerySelect): PG_PromiseType<T> {
         // select data
         const selectAllDataFromDB = async () => {
@@ -19,13 +29,8 @@ export class DatabaseQueries {
             // run query 
             if(queryObject.function) {
                 // run function
-                const {data, error} = queryObject.function[1]
-                                        // function with parameter
-                                        ? await this.sb.rpc(queryObject.function[0])
-                                        .ilike('username', `%${queryObject.function[1]}%`)
-                                        // function without parameter
-                                        : await this.sb.rpc(queryObject.function[0])  
-                return {data: data as T[], error: error}
+                const invokeFunction = await this.db_func<T>(queryObject)
+                return invokeFunction
             }
             else if(queryObject.whereColumn) {
                 // where condition
@@ -51,10 +56,17 @@ export class DatabaseQueries {
         // insert data 
         const insertDataToDB = async () => {
             // run query
-            const {data, error} = await this.sb.from(this.prefix + queryObject.table)
-                                .insert(queryObject.insertColumn)
-                                .select(queryObject.selectColumn as string)
-            return {data: data as T[], error: error}
+            if(queryObject.function) {
+                // run function
+                const invokeFunction = await this.db_func<T>(queryObject)
+                return invokeFunction
+            }
+            else {
+                const {data, error} = await this.sb.from(this.prefix + queryObject.table)
+                                    .insert(queryObject.insertColumn)
+                                    .select(queryObject.selectColumn as string)
+                return {data: data as T[], error: error}
+            }
         }
         return insertDataToDB()
     }
@@ -83,7 +95,7 @@ export class DatabaseQueries {
      * 
      * list of column:
      * - users - id | is_login | username | password | display_name | created_at | updated_at | deleted_at
-     * - profiles - id | user_id (id, is_login) | description | created_at | updated_at | deleted_at
+     * - profiles - id | user_id (id, is_login, username, display_name) | description | created_at | updated_at | deleted_at
      * - messages - 
      * - direct_chats - 
      * - group_chats - 
@@ -100,7 +112,7 @@ export class DatabaseQueries {
         }
         // for profiles table
         else if(type === 'profiles') {
-            const pickerList: string[] = ['id', 'user_id(is_login, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
+            const pickerList: string[] = ['id', 'user_id(id, is_login, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
             selectedColumns.push(columnPicker(pickerList))
         }
         // for messages table

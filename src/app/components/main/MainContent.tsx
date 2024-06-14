@@ -5,13 +5,12 @@ import HomePage from "./components/HomePage"
 import LoginPage from "./components/LoginPage"
 import RegisterPage from "./components/RegisterPage"
 import Profile from "./components/Profile"
-import { ProfileContext } from "../../context/ProfileContext"
 import UserList from "./components/UserList"
 import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
-import { LoginProfileType } from "../../context/LoginContext"
+import { LoginProfileContext } from "../../context/LoginProfileContext"
 
-export default function MainContent() {
+export default function MainContent({ pubnubKeys }) {
     // get page for display
     const [displayPage, setDisplayPage] = useState('home')
     // page click handler
@@ -20,15 +19,8 @@ export default function MainContent() {
     }
     // display user list
     const [showUserList, setShowUserList] = useState(false)
-    // profile state
-    const { showMyProfile, showOtherProfile } = useContext(ProfileContext)
-    // dummy user
-    const dummyUser: LoginProfileType = {
-        username: 'Wawanto',
-        display_name: 'Wawan',
-        is_login: true,
-        description: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.'
-    }
+    // login profile state
+    const { isLogin, showMyProfile, showOtherProfile } = useContext(LoginProfileContext)
     
     return (
         <>
@@ -58,6 +50,7 @@ export default function MainContent() {
                     <div className="my-4"></div>
                     {
                         /* if profile icon on user list clicked */
+                        // pageHandler for profile and chat icon
                         showOtherProfile[0]
                             ? /* show other's profile */
                             <Profile profileClassName="md:w-auto" userData={showOtherProfile[1]} />
@@ -70,17 +63,17 @@ export default function MainContent() {
                     border-2 border-black h-full bg-amber-300 dark:bg-emerald-800
                     md:col-span-9">
                     {/* my profile */}
-                    { showMyProfile && <Profile profileClassName="absolute right-2 w-2/3 h-3/4" userData={dummyUser} />}
+                    { showMyProfile && <Profile profileClassName="absolute right-2 w-2/3 h-3/4" userData={isLogin[1]} />}
                     {/* pages container */}
                     <div className="table-cell align-middle text-center w-screen h-screen">
                         {
-                            displayPage == 'home' 
-                                ? <HomePage pageHandler={ getPageHandler } />
+                            isLogin[0] && displayPage == 'chatting' 
+                                ? <ChattingPage pubnubKeys={pubnubKeys} />
                                 : displayPage == 'register'
                                     ? <RegisterPage pageHandler={ getPageHandler } />
                                     : displayPage == 'login'
                                         ? <LoginPage pageHandler={ getPageHandler } />
-                                        : <ChattingPage />
+                                        : <HomePage pageHandler={ getPageHandler } />
                         }
                     </div>
                 </div>

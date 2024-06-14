@@ -1,9 +1,9 @@
 import { useContext } from "react";
-import { LoginContext } from "../../../context/LoginContext";
+import { LoginProfileContext } from "../../../context/LoginProfileContext";
 import { fetcher } from "../../helper";
 
 export default function LogoutButton() {
-    const { isLogin, setIsLogin } = useContext(LoginContext)
+    const { isLogin, setIsLogin } = useContext(LoginProfileContext)
     return (
         <button className="hover:bg-sky-400 dark:hover:bg-orange-400 w-full p-2" onClick={() => logoutAccount(isLogin, setIsLogin)}> Logout </button>
     )

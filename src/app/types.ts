@@ -7,13 +7,14 @@ type PG_PromiseType<Data> = Promise<{ data: Data[] | null, error: PostgrestError
 interface IQueryBuilder {
     table: string;
     selectColumn?: string | number;
+    function?: string;
+    function_args?: {[key: string]: string}
 }
 
 interface IQuerySelect extends IQueryBuilder {
     whereColumn?: string;
     whereValue?: string | number;
     limit?: { min: number, max: number };
-    function?: string[];
 }
 
 interface IQueryInsert extends IQueryBuilder {
@@ -21,7 +22,9 @@ interface IQueryInsert extends IQueryBuilder {
         // register
         IRegister |
         // login
-        ILogin
+        ILogin |
+        // direct chat
+        IDirectChat
 }
 
 interface IQueryUpdate extends IQueryBuilder {
@@ -31,7 +34,9 @@ interface IQueryUpdate extends IQueryBuilder {
         // register
         IRegister |
         // login
-        ILogin
+        ILogin |
+        // direct chat
+        IDirectChat
 }
 
 // response
@@ -42,7 +47,7 @@ interface IResponse {
 }
 
 // payload types
-type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload
+type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload
 
 // register
 interface IRegister {
@@ -64,11 +69,6 @@ interface IRegisterPayload extends IRegister {
  * UPDATE LOGIN = is_login, token, updated_at
  * SELECT PROFILE = id / user_id
  */
-
-interface LoginType {
-    id?: string;
-    username?: string;
-}
 
 interface ILogin {
     // only for update query to prevent 'get updateColumn' error
@@ -101,6 +101,21 @@ interface IProfilePayload extends iProfile {
     username: string;
 }
 
+// direct message
+interface IDirectChat {
+    user_from: string;
+    user_to: string;
+    message_id?: {
+        message: string;
+        created_at?: string;
+        updated_at?: string;
+    }
+}
+
+interface IDirectChatPayload extends IDirectChat {
+    message: string;
+}
+
 export type {
     PG_PromiseType,
     // queries
@@ -114,8 +129,9 @@ export type {
     // register
     IRegisterPayload,
     // login
-    LoginType,
     ILoginPayload,
     // profile
-    IProfilePayload
+    IProfilePayload,
+    // direct message
+    IDirectChatPayload
 }

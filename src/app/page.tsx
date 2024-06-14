@@ -1,6 +1,11 @@
 import Index from "./components"
 
 export default function Page() {
+    // get pubnub sub & pub key
+    const pubnubKeys = {
+        sub: process.env.PUBNUB_SUB_KEY,
+        pub: process.env.PUBNUB_PUB_KEY
+    }
     // get secret
     const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
     /**
@@ -19,5 +24,5 @@ export default function Page() {
      * profile - pink 800
      */
     // send payload to home
-    return <Index secret={accessTokenSecret} />
+    return <Index secret={accessTokenSecret} pubnubKeys={pubnubKeys} />
 }

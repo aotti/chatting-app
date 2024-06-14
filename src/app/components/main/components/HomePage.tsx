@@ -1,9 +1,9 @@
 import { useContext } from "react"
-import { LoginContext, LoginProfileType } from "../../../context/LoginContext"
+import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
 
 export default function HomePage({pageHandler}: {pageHandler: (page: string) => void}) {
     // login state
-    const { isLogin } = useContext(LoginContext)
+    const { isLogin } = useContext(LoginProfileContext)
 
     return (
         isLogin[0]
@@ -15,7 +15,7 @@ export default function HomePage({pageHandler}: {pageHandler: (page: string) => 
 function LoginTrue({ loginData }: {loginData: LoginProfileType}) {
     return (
         <>
-            <p className="text-xl"> Welcome {loginData.username}! </p>
+            <p className="text-xl"> Welcome {loginData.display_name}! </p>
         </>
     )
 }

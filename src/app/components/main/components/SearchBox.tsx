@@ -39,7 +39,8 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
         method: 'GET'
     }
     // fetching
-    const searchResponse: IResponse = await (await fetcher(`/user?username=${usernameInput}`, searchFetchOptions)).json()
+    errorMessage.textContent = 'searching..'
+    const searchResponse: IResponse = await (await fetcher(`/user?display_name=${usernameInput}`, searchFetchOptions)).json()
     // response
     switch(searchResponse.status) {
         case 200:
@@ -48,6 +49,6 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
             setUsersFound(searchResponse.data)
             break
         default:
-            errorMessage.textContent = `${searchResponse.status}: ${searchResponse.message}`
+            errorMessage.textContent = `${searchResponse.status}: ${JSON.stringify(searchResponse.message)}`
     }
 }

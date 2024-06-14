@@ -1,5 +1,6 @@
-import { KeyboardEvent } from "react"
+import { ChangeEvent } from "react"
 import { createHash } from "crypto"
+import Pubnub from "pubnub"
 
 /**
  * @param value html tag / id / className
@@ -15,7 +16,7 @@ export function fetcher(endpoint, options) {
     return fetch(url, options)
 }
 
-export function formInputLength(ev: KeyboardEvent<HTMLInputElement>) {
+export function formInputLength(ev: ChangeEvent<HTMLInputElement>) {
     // get current value
     const value = ev.currentTarget.value
     const minLength = ev.currentTarget.minLength

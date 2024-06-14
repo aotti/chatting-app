@@ -1,6 +1,6 @@
 import { DatabaseQueries } from "../../config/DatabaseQueries"
 import { respond } from "../helper"
-import { ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse, LoginType } from "../../types"
+import { ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
 import filter from "../filter"
 import { SignJWT } from "jose"
 import { cookies } from "next/headers"
@@ -61,7 +61,7 @@ export default class UserController {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 2345),
+                selectColumn: this.dq.columnSelector('users', 234),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
@@ -109,7 +109,7 @@ export default class UserController {
             // object to run query
             const queryObject: IQueryUpdate = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 1235),
+                selectColumn: this.dq.columnSelector('users', 1),
                 whereColumn: 'username',
                 whereValue: data.username,
                 get updateColumn() {
@@ -131,7 +131,6 @@ export default class UserController {
                 if(req) result = await this.getProfiles(action, updateResponse.data[0], req)
                 // logout case - return response
                 else {
-                    delete updateResponse.data[0].id
                     result = respond(204, action, updateResponse.data)
                 }
             }
@@ -146,7 +145,7 @@ export default class UserController {
         }
     }
 
-    async getProfiles<T extends LoginType>(action: string, payload: T, req?: NextRequest) {
+    async getProfiles(action: string, payload: Omit<ILoginPayload, 'username' | 'password'>, req?: NextRequest) {
         let result: IResponse
         // filter payload
         const filteredPayload = !payload.id ? filter(action, payload as IProfilePayload) : null
@@ -165,7 +164,8 @@ export default class UserController {
                 }
                 : {
                     table: 'profiles',
-                    function: ['join_users_profiles', payload.username]
+                    function: 'join_users_profiles',
+                    function_args: {name: payload.display_name}
                 }
             const selectResponse = await this.dq.select<IProfilePayload>(queryObject)
             // fail 
@@ -177,7 +177,7 @@ export default class UserController {
                 // select response for query
                 // modify data for easier reading
                 type NewSelectResDataType = {
-                    username: string;
+                    id: string;
                     display_name: string;
                     is_login: boolean;
                     description: string;
@@ -185,9 +185,9 @@ export default class UserController {
                 }
                 let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
                 // login case
-                if(selectResponse.data[0].user_id?.username) {
+                if(selectResponse.data[0]?.user_id?.username) {
                     newSelectResData = [{
-                        username: selectResponse.data[0].user_id.username,
+                        id: selectResponse.data[0].user_id.id,
                         display_name: selectResponse.data[0].user_id.display_name,
                         is_login: selectResponse.data[0].user_id.is_login,
                         description: selectResponse.data[0].description
@@ -198,9 +198,9 @@ export default class UserController {
                     const refreshSecret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET)
                     const refreshToken = await new SignJWT(newSelectResData[0])
                         .setProtectedHeader({ alg: 'HS256' })
-                        .setAudience('chatting app')
+                        .setAudience('www.chatting-app.com')
                         .setIssuer('chatting app')
-                        .setSubject(newSelectResData[0].username as string)
+                        .setSubject(newSelectResData[0].display_name)
                         .sign(refreshSecret)
                     // save refresh token
                     cookies().set('refreshToken', refreshToken, { 

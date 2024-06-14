@@ -1,11 +1,11 @@
-import { Dispatch, FormEvent, SetStateAction, useContext } from "react";
+import { FormEvent, useContext } from "react";
 import { fetcher, formInputLength, qS, sha256 } from "../../helper";
 import { ILoginPayload, IResponse } from "../../../types";
-import { LoginContext, LoginProfileType } from "../../../context/LoginContext";
+import { LoginProfileContext } from "../../../context/LoginProfileContext";
 
 export default function LoginPage({pageHandler}: {pageHandler: (page: string) => void}) {
     // login set state
-    const { setIsLogin } = useContext(LoginContext)
+    const { setIsLogin } = useContext(LoginProfileContext)
 
     return (
         <div className="
@@ -18,14 +18,14 @@ export default function LoginPage({pageHandler}: {pageHandler: (page: string) =>
                     <input type="text" id="username" minLength={5} maxLength={16} required 
                         className="p-1 rounded-md dark:text-black"
                         autoFocus
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* password */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="password"> Password </label>
                     <input type="password" id="password" minLength={8} required 
                         className="p-1 rounded-md dark:text-black"
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* message */}
                 <div className="font-semibold">

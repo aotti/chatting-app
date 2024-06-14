@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react"
 import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
-import { ProfileContext } from "../context/ProfileContext"
-import { LoginContext, LoginProfileType } from "../context/LoginContext"
+import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
 import { jwtVerify } from "jose"
 import { fetcher } from "./helper"
 import { IResponse } from "../types"
 import { DarkModeContext } from "../context/DarkModeContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
+import { ChatWithContext } from "../context/ChatWithContext"
+import FooterContent from "./footer/FooterContent"
 
-export default function Index({ secret }) {
+export default function Index({ secret, pubnubKeys }) {
     // header-MenuButton
     // dark mode state
     const [darkMode, setDarkMode] = useState(false)
@@ -36,22 +37,27 @@ export default function Index({ secret }) {
     const [showMyProfile, setShowMyProfile] = useState(false)
     // show other profile
     const [showOtherProfile, setShowOtherProfile] = useState<[boolean, LoginProfileType]>([false, null])
-    // profile props
-    const profileStates = {
+
+    // header-MenuButton, LogoutButton
+    // main-HomePage, LoginPage, Profile, UserList
+    // login status 
+    const [isLogin, setIsLogin] = useState<[boolean, LoginProfileType]>([false, null])
+    // login profile props
+    const loginProfileStates = {
+        isLogin: isLogin,
+        setIsLogin: setIsLogin,
         showMyProfile: showMyProfile,
         setShowMyProfile: setShowMyProfile,
         showOtherProfile: showOtherProfile,
         setShowOtherProfile: setShowOtherProfile
     }
 
-    // header-MenuButton, LogoutButton
-    // main-HomePage, LoginPage, Profile
-    // login status 
-    const [isLogin, setIsLogin] = useState<[boolean, LoginProfileType]>([false, null])
-    // login props
-    const loginStates = {
-        isLogin: isLogin,
-        setIsLogin: setIsLogin
+    // chat with context
+    const [chatWith, setChatWith] = useState<LoginProfileType>(null)
+    // chat with states
+    const chatWithStates = {
+        chatWith: chatWith,
+        setChatWith: setChatWith
     }
 
     // verify access token
@@ -96,9 +102,9 @@ export default function Index({ secret }) {
     
     return (
         <DarkModeContext.Provider value={ darkModeStates }>
-            <ProfileContext.Provider value={ profileStates }>
-                <LoginContext.Provider value={ loginStates }>
-                    <UsersFoundContext.Provider value={ usersFoundStates }>
+            <LoginProfileContext.Provider value={ loginProfileStates }>
+                <UsersFoundContext.Provider value={ usersFoundStates }>
+                    <ChatWithContext.Provider value={ chatWithStates }>
                         <div className={ darkMode ? 'dark' : '' }>
                             <div className="grid grid-rows-10 bg-slate-300 dark:bg-slate-800">
                                 {/* header */}
@@ -107,17 +113,17 @@ export default function Index({ secret }) {
                                 </header>
                                 {/* main */}
                                 <main className="row-span-8 h-full dark:text-white">
-                                    <MainContent />
+                                    <MainContent pubnubKeys={pubnubKeys} />
                                 </main>
                                 {/* footer */}
                                 <footer className="row-span-1 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
-                                    <p className="h-full"> ©aotti 2024 </p>
+                                    <FooterContent />
                                 </footer>
                             </div>
                         </div>
-                    </UsersFoundContext.Provider>
-                </LoginContext.Provider>
-            </ProfileContext.Provider>
+                    </ChatWithContext.Provider>
+                </UsersFoundContext.Provider>
+            </LoginProfileContext.Provider>
         </DarkModeContext.Provider>
     )
 }
@@ -126,13 +132,13 @@ async function verifyAccessToken(token: string, secret: string) {
     try {
         // verify token
         const encodedSecret = new TextEncoder().encode(secret)
-        const verifyToken = await jwtVerify(token, encodedSecret)
+        const verifyToken = await jwtVerify<LoginProfileType>(token, encodedSecret)
         // token verified
         const verifiedUser = {
-            username: verifyToken.payload.username as string,
-            display_name: verifyToken.payload.display_name as string,
-            is_login: verifyToken.payload.is_login as boolean,
-            description: verifyToken.payload.description as string
+            id: verifyToken.payload.id,
+            display_name: verifyToken.payload.display_name,
+            is_login: verifyToken.payload.is_login,
+            description: verifyToken.payload.description
         }
         return verifiedUser
     } catch (error) {

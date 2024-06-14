@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from "react";
-import { LoginProfileType } from "./LoginContext";
+import { LoginProfileType } from "./LoginProfileContext";
 
 interface IUsersFoundStates {
     usersFound: LoginProfileType[];

@@ -14,28 +14,28 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                     <input type="text" id="display_name" minLength={5} maxLength={16} required
                         className="p-1 rounded-md dark:text-black"
                         autoFocus
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* username */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="username"> Username </label>
                     <input type="text" id="username" minLength={5} maxLength={16} required
                         className="p-1 rounded-md dark:text-black"
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* password */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="password"> Password </label>
                     <input type="password" id="password" minLength={8} required
                         className="p-1 rounded-md dark:text-black"
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* confirm password */}
                 <div className="grid grid-cols-2">
                     <label htmlFor="confirm_password"> Confirm Password </label>
                     <input type="password" id="confirm_password" minLength={8} required
                         className="p-1 rounded-md dark:text-black"
-                        onKeyUp={(event) => formInputLength(event)}/>
+                        onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* message */}
                 <div className="font-semibold">
@@ -68,10 +68,10 @@ async function registerAccount(ev: FormEvent<HTMLFormElement>) {
     // get form input values
     const formData: IRegisterPayload = {
         is_login: false,
-        display_name: formInputs[0].value,
-        username: formInputs[1].value,
+        display_name: JSON.stringify(formInputs[0].value),
+        username: JSON.stringify(formInputs[1].value),
         password: sha256(formInputs[2].value),
-        confirm_password: formInputs[3].value
+        confirm_password: sha256(formInputs[3].value)
     }
     
     // confirm password
