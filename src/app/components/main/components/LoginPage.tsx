@@ -13,18 +13,18 @@ export default function LoginPage({pageHandler}: {pageHandler: (page: string) =>
             lg:w-1/2 ">
             <form className="grid grid-rows-3 gap-4" onSubmit={(event) => loginAccount(event, setIsLogin)}>
                 {/* username */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="username"> Username </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="username" className="dark:text-white"> Username </label>
                     <input type="text" id="username" minLength={5} maxLength={16} required 
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md text-black"
                         autoFocus
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* password */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="password"> Password </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="password" className="dark:text-white"> Password </label>
                     <input type="password" id="password" minLength={8} required 
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md text-black"
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* message */}

@@ -32,7 +32,7 @@ export default function filter(action: string, payload: PayloadTypes) {
             break
         case action.includes('logout'): 
             // filtering
-            [filterStatus, filterMessage] = logout(payload as Pick<ILoginPayload, 'username' | 'is_login'>)
+            [filterStatus, filterMessage] = logout(payload as ILoginPayload)
             // found error
             if(!filterStatus) filterResult = respond(400, filterMessage, [])
             break
@@ -127,10 +127,10 @@ function login(payload: ILoginPayload): [boolean, string] {
     return resultValue
 }
 
-function logout(payload: Pick<ILoginPayload, 'username' | 'is_login'>) {
+function logout(payload: ILoginPayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /username|is_login/g
+    const regexKeys = /id|is_login/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 2)
     if(!resultKey[0]) return resultKey
@@ -141,10 +141,10 @@ function logout(payload: Pick<ILoginPayload, 'username' | 'is_login'>) {
         const value = payload[key]
         // filter payload value
         switch(key) {
+            case 'id':
+                resultValue = uuidCheck(key, value); break
             case 'is_login':
                 resultValue = valueCheck(key, value, 'boolean'); break
-            case 'username':
-                resultValue = valueCheck(key, value, 'string', 5); break
         }
         // error found
         if(!resultValue[0]) return resultValue
@@ -213,6 +213,14 @@ function valueCheck(key: string, value: string | number | boolean, type: string,
     // check length
     if((value as string).length < length)
         return [false, `"${key}" must have atleast ${length} characters!`]
+    // no error
+    return [true, '']
+}
+
+function uuidCheck(key: string, value: string): [boolean, string] {
+    const uuidv4_regex = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+    if(!value.match(uuidv4_regex))
+        return [false, `"${key}" type does not match!`]
     // no error
     return [true, '']
 }

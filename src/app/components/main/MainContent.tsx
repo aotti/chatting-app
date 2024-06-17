@@ -10,7 +10,7 @@ import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
 import { LoginProfileContext } from "../../context/LoginProfileContext"
 
-export default function MainContent({ pubnubKeys }) {
+export default function MainContent() {
     // get page for display
     const [displayPage, setDisplayPage] = useState('home')
     // page click handler
@@ -68,7 +68,7 @@ export default function MainContent({ pubnubKeys }) {
                     <div className="table-cell align-middle text-center w-screen h-screen">
                         {
                             isLogin[0] && displayPage == 'chatting' 
-                                ? <ChattingPage pubnubKeys={pubnubKeys} />
+                                ? <ChattingPage />
                                 : displayPage == 'register'
                                     ? <RegisterPage pageHandler={ getPageHandler } />
                                     : displayPage == 'login'

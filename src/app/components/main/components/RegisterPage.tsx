@@ -9,32 +9,32 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
             lg:w-1/2 ">
             <form className="grid grid-rows-5 gap-4" onSubmit={(event) => registerAccount(event)}>
                 {/* display name */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="display_name"> Name </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="display_name" className="dark:text-white"> Name </label>
                     <input type="text" id="display_name" minLength={5} maxLength={16} required
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md"
                         autoFocus
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* username */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="username"> Username </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="username" className="dark:text-white"> Username </label>
                     <input type="text" id="username" minLength={5} maxLength={16} required
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* password */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="password"> Password </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="password" className="dark:text-white"> Password </label>
                     <input type="password" id="password" minLength={8} required
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* confirm password */}
-                <div className="grid grid-cols-2">
-                    <label htmlFor="confirm_password"> Confirm Password </label>
+                <div className="grid grid-cols-2 text-black">
+                    <label htmlFor="confirm_password" className="dark:text-white"> Confirm Password </label>
                     <input type="password" id="confirm_password" minLength={8} required
-                        className="p-1 rounded-md dark:text-black"
+                        className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
                 </div>
                 {/* message */}

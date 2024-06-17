@@ -19,7 +19,10 @@ async function logoutAccount(isLogin, setIsLogin) {
         headers: {
             'content-type': 'application/json'
         },
-        body: JSON.stringify(isLogin[1])
+        body: JSON.stringify({
+            id: isLogin[1].id,
+            is_login: isLogin[1].is_login
+        })
     }
     // fetching
     const logoutResponse = await fetcher('/user/logout', logoutFetchOptions)

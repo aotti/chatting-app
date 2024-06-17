@@ -11,8 +11,16 @@ import { DarkModeContext } from "../context/DarkModeContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
 import FooterContent from "./footer/FooterContent"
+import Pubnub from "pubnub"
+import { PubNubProvider } from "pubnub-react"
 
-export default function Index({ secret, pubnubKeys }) {
+export default function Index({ secret, pubnubKeys }: { secret: string; pubnubKeys: Record<'sub'|'pub'|'uuid', string>}) {
+    // pubnub 
+    const pubnub = new Pubnub({
+        subscribeKey: pubnubKeys.sub,
+        publishKey: pubnubKeys.pub,
+        userId: pubnubKeys.uuid
+    })
     // header-MenuButton
     // dark mode state
     const [darkMode, setDarkMode] = useState(false)
@@ -105,22 +113,24 @@ export default function Index({ secret, pubnubKeys }) {
             <LoginProfileContext.Provider value={ loginProfileStates }>
                 <UsersFoundContext.Provider value={ usersFoundStates }>
                     <ChatWithContext.Provider value={ chatWithStates }>
-                        <div className={ darkMode ? 'dark' : '' }>
-                            <div className="grid grid-rows-10 bg-slate-300 dark:bg-slate-800">
-                                {/* header */}
-                                <header className="row-span-1 h-fit p-3 bg-blue-300 dark:bg-orange-400 dark:text-white">
-                                    <HeaderContent />
-                                </header>
-                                {/* main */}
-                                <main className="row-span-8 h-full dark:text-white">
-                                    <MainContent pubnubKeys={pubnubKeys} />
-                                </main>
-                                {/* footer */}
-                                <footer className="row-span-1 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
-                                    <FooterContent />
-                                </footer>
+                        <PubNubProvider client={pubnub}>
+                            <div className={ darkMode ? 'dark' : '' }>
+                                <div className="grid grid-rows-10 bg-slate-300 dark:bg-slate-800">
+                                    {/* header */}
+                                    <header className="row-span-1 h-fit p-3 bg-blue-300 dark:bg-orange-400 dark:text-white">
+                                        <HeaderContent />
+                                    </header>
+                                    {/* main */}
+                                    <main className="row-span-8 h-full dark:text-white">
+                                        <MainContent />
+                                    </main>
+                                    {/* footer */}
+                                    <footer className="row-span-1 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
+                                        <FooterContent />
+                                    </footer>
+                                </div>
                             </div>
-                        </div>
+                        </PubNubProvider>
                     </ChatWithContext.Provider>
                 </UsersFoundContext.Provider>
             </LoginProfileContext.Provider>

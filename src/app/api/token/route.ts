@@ -12,10 +12,10 @@ export async function GET(req: NextRequest) {
     const refreshToken = cookies().get('refreshToken')?.value
     // no token
     if(!refreshToken) return NextResponse.json({
-        status: 200,
+        status: 403,
         message: 'refresh token invalid',
         data: []
-    }, { status: 200 })
+    }, { status: 403 })
     // response
     const result = await authController.createToken(action, refreshToken, req)
     return NextResponse.json(result, { status: result.status })

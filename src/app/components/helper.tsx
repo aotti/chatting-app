@@ -1,13 +1,20 @@
 import { ChangeEvent } from "react"
 import { createHash } from "crypto"
-import Pubnub from "pubnub"
 
 /**
- * @param value html tag / id / className
- * @returns html element
+ * @param value html tag / id / class
+ * @returns 1st html element that match tag/id/class
  */
 export function qS(value: string) {
     return document.querySelector(value)
+}
+
+/**
+ * @param value html tag / id / class
+ * @returns all html element that match tag/id/class
+ */
+export function qSA(value: string) {
+    return document.querySelectorAll(value)
 }
 
 export function fetcher(endpoint, options) {

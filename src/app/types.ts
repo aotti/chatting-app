@@ -101,6 +101,13 @@ interface IProfilePayload extends iProfile {
     username: string;
 }
 
+// message object
+interface IMessage {
+    style: string;
+    author: string;
+    text: string;
+}
+
 // direct message
 interface IDirectChat {
     user_from: string;
@@ -132,6 +139,8 @@ export type {
     ILoginPayload,
     // profile
     IProfilePayload,
+    // message object
+    IMessage,
     // direct message
     IDirectChatPayload
 }

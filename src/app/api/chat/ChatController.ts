@@ -1,20 +1,14 @@
-import { jwtVerify } from "jose";
-import { IDirectChatPayload, IQueryInsert, IResponse } from "../../types";
+import { IDirectChatPayload, IMessage, IQueryInsert, IResponse } from "../../types";
 import filter from "../filter";
 import { respond } from "../helper";
 import { DatabaseQueries } from "../../config/DatabaseQueries";
+import Pubnub from "pubnub";
 
 export class ChatController {
     private dq = new DatabaseQueries()
     
     async send(action: string, payload: IDirectChatPayload, token: string) {
         let result: IResponse
-        // verify token
-        const accessTokenSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
-        const verifyAccessToken = await jwtVerify(token, accessTokenSecret)
-        // token expired
-        if(!verifyAccessToken.payload) 
-            return result = respond(401, 'invalid token', [])
         // filter payload
         const filteredPayload = filter(action, payload)
         if(filteredPayload.status === 400) {
@@ -34,15 +28,31 @@ export class ChatController {
             }
             // insert data
             const insertResponse = await this.dq.insert<any>(queryObject as IQueryInsert)
-            console.log(insertResponse);
-            
             // fail 
             if(insertResponse.data === null) {
                 result = respond(500, insertResponse.error, [])
             }
             // success
             else if(insertResponse.error === null) {
-                result = respond(200, `${action} success`, insertResponse.data)
+                // pubnub
+                const publishMessage: IMessage = {
+                    style: '',
+                    author: payload.user_from,
+                    text: JSON.parse(payload.message)
+                }
+                // pubnub 
+                const pubpub = new Pubnub({
+                    subscribeKey: process.env.PUBNUB_SUB_KEY,
+                    publishKey: process.env.PUBNUB_PUB_KEY,
+                    userId: process.env.PUBNUB_UUID
+                })
+                const dmChannel = `DirectChat-${payload.user_to}`
+                await pubpub.publish({
+                    channel: dmChannel,
+                    message: publishMessage
+                })
+                // response data is number
+                result = respond(200, `${action} success`, [{ messageCount: insertResponse.data }])
             }
             // return response
             return result

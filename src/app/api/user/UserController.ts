@@ -232,10 +232,10 @@ export default class UserController {
         }
     }
 
-    async logout(action: string, payload: Pick<ILoginPayload, 'username'>) {
+    async logout(action: string, payload: Pick<ILoginPayload, 'id' | 'is_login'>) {
         let result: IResponse
         // filter payload
-        const filteredPayload = filter(action, payload)
+        const filteredPayload = filter(action, payload as ILoginPayload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
@@ -245,8 +245,8 @@ export default class UserController {
             const queryObject: IQuerySelect = {
                 table: 'users',
                 selectColumn: this.dq.columnSelector('users', 23),
-                whereColumn: 'username',
-                whereValue: payload.username
+                whereColumn: 'id',
+                whereValue: payload.id
             }
             // select data
             const selectResponse = await this.dq.select<ILoginPayload>(queryObject)
