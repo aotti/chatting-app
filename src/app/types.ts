@@ -106,6 +106,7 @@ interface IMessage {
     style: string;
     author: string;
     text: string;
+    time: string;
 }
 
 // direct message
@@ -121,6 +122,7 @@ interface IDirectChat {
 
 interface IDirectChatPayload extends IDirectChat {
     message: string;
+    time: string;
 }
 
 export type {

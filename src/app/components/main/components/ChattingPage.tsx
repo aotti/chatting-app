@@ -1,7 +1,7 @@
 import { Dispatch, FormEvent, SetStateAction, useContext, useEffect, useState } from "react";
 import { ChatWithContext } from "../../../context/ChatWithContext";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
-import { IDirectChatPayload, IMessage, IResponse } from "../../../types";
+import { IMessage, IResponse } from "../../../types";
 import { fetcher, qS, qSA } from "../../helper";
 import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
@@ -13,16 +13,15 @@ export default function ChattingPage() {
     const { isLogin } = useContext(LoginProfileContext)
     // history messages
     const [historyMessages, setHistoryMessages] = useState(null)
-    // get message
-    const [getMessageCounter, setGetMessageCounter] = useState(false)
-    const [getMessage, setGetMessage] = useState<IMessage[]>([])
-    // send message
-    const [sendMessage, setSendMessage] = useState<Omit<IDirectChatPayload, 'user_to'>>(null)
     // message items
-    const [messageItems, setMessageItems] = useState<IMessage[]>([
-        { style: 'justify-end', author: isLogin[1].display_name, text: 'message 1' },
-        { style: 'justify-start', author: 'yanto', text: 'message 2' }
-    ])
+    const [messageItems, setMessageItems] = useState<IMessage[]>(() => {
+        const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
+        return [
+            // tambah date time
+            { style: 'justify-end', author: isLogin[1].display_name, text: 'message 1', time: messageTime },
+            { style: 'justify-start', author: 'yanto', text: 'message 2', time: messageTime }
+        ]
+    })
 
     // pubnub
     const pubsub = usePubNub()
@@ -74,9 +73,7 @@ export default function ChattingPage() {
             {/* send message box */}
             <div className="flex items-center border-t border-black">
                 <form className="flex justify-around w-full" onSubmit={(event) => sendChat(event, setMessageItems, isLogin[1], chatWith)}>
-                    <input type="text" className="text-xl p-1 w-4/5 rounded-md dark:text-black" 
-                        id="messageBox" 
-                        onKeyUp={() => setGetMessageCounter(false)}/>
+                    <input type="text" className="text-xl p-1 w-4/5 rounded-md dark:text-black" id="messageBox" />
                     <button type="submit" className="inline-block bg-orange-400 dark:bg-orange-600 py-1 px-2 w-24 rounded-md"> 
                         Send 
                     </button>
@@ -86,33 +83,33 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ messageItems }: { messageItems: any[] }) {
+function Messages({ messageItems }: { messageItems: IMessage[] }) {
     return (
         // message container
         <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
             {
                 // message items
                 messageItems.map((v, i) => {
-                    return <MessageItem style={v.style} author={v.author} message={v.text} key={i}/>
+                    return <MessageItem msgItem={v} key={i}/>
                 })
             }
         </div>
     )
 }
 
-function MessageItem({style, author, message}: Record<'style'|'author'|'message', string>) {
+function MessageItem({msgItem}: {msgItem: IMessage}) {
     return (
-        <div className={`flex ${style}`}>
+        <div className={`flex ${msgItem.style}`}>
             <div className="border rounded-md min-w-32 p-1 my-2 bg-orange-400 dark:bg-sky-700">
                 {/* author & status*/}
                 <p className="text-xs flex justify-between"> 
-                    <span> {author} </span>
-                    <span id="messageStatus"> {style.includes('start') ? '✔' : '🕗'} </span>
+                    <span> {msgItem.author} </span>
+                    <span id="messageStatus"> {msgItem.style.includes('start') ? '✔' : '🕗'} </span>
                 </p>
                 {/* message */}
-                <p className="text-left"> {message} </p>
+                <p className="text-left"> {msgItem.text} </p>
                 {/* time */}
-                <p className="text-right text-xs border-t"> {new Date().toLocaleTimeString()} </p>
+                <p className="text-right text-xs border-t"> {msgItem.time} </p>
             </div>
         </div>
     )
@@ -126,10 +123,12 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
     // filter button elements
     const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
     // message payload
+    const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
     const formData = {
         user_from: userFrom.id,
         user_to: userTo.id,
-        message: JSON.stringify(formInputs[0].value)
+        message: JSON.stringify(formInputs[0].value),
+        time: messageTime
     }
     // check message empty
     if(formData.message == '') return
@@ -140,7 +139,8 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
             // my new message
             style: 'justify-end', 
             author: userFrom.display_name, 
-            text: JSON.parse(formData.message) 
+            text: JSON.parse(formData.message),
+            time: messageTime
         }
     ])
     // send message

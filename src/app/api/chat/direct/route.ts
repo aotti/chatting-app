@@ -49,13 +49,13 @@ export async function POST(req: NextRequest) {
         // create new access token
         const newAccessToken = await authController.createToken(action, refreshToken, req)
         // send chat
-        const altResult = await chatController.send(action, bodyPayload, newAccessToken.data[0].token)
+        const altResult = await chatController.send(action, bodyPayload)
         // return response
         altResult.data[0] = {...altResult.data[0], ...newAccessToken.data[0]}
         return NextResponse.json(altResult, { status: altResult.status })
     }
     // send chat
-    const result = await chatController.send(action, bodyPayload, token)
+    const result = await chatController.send(action, bodyPayload)
     // return response
     return NextResponse.json(result, { status: result.status })
 }

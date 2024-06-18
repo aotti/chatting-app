@@ -7,7 +7,7 @@ import Pubnub from "pubnub";
 export class ChatController {
     private dq = new DatabaseQueries()
     
-    async send(action: string, payload: IDirectChatPayload, token: string) {
+    async send(action: string, payload: IDirectChatPayload) {
         let result: IResponse
         // filter payload
         const filteredPayload = filter(action, payload)
@@ -38,7 +38,8 @@ export class ChatController {
                 const publishMessage: IMessage = {
                     style: '',
                     author: payload.user_from,
-                    text: JSON.parse(payload.message)
+                    text: JSON.parse(payload.message),
+                    time: payload.time
                 }
                 // pubnub 
                 const pubpub = new Pubnub({
