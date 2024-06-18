@@ -18,7 +18,7 @@ export function qSA(value: string) {
 }
 
 export function fetcher(endpoint, options) {
-    const host = process.env.API_URL || 'http://localhost:3000/api'
+    const host = `${window.location.origin}/api`
     const url = host + endpoint
     return fetch(url, options)
 }
