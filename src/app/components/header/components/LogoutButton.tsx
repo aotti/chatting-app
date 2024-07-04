@@ -20,8 +20,7 @@ async function logoutAccount(isLogin, setIsLogin) {
             'content-type': 'application/json'
         },
         body: JSON.stringify({
-            id: isLogin[1].id,
-            is_login: isLogin[1].is_login
+            id: isLogin[1].id
         })
     }
     // fetching

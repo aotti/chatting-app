@@ -1,4 +1,5 @@
 import { PostgrestError } from "@supabase/supabase-js";
+import { UUID } from "crypto";
 
 // ~~ POSTGREST RETURN TYPE PROMISE ~~
 type PG_PromiseType<Data> = Promise<{ data: Data[] | null, error: PostgrestError | null }>
@@ -51,7 +52,6 @@ type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirect
 
 // register
 interface IRegister {
-    is_login: boolean;
     display_name: string;
     username: string;
     password: string;
@@ -61,19 +61,18 @@ interface IRegisterPayload extends IRegister {
     confirm_password: string;
 }
 
+// logged user
+interface ILoggedUsers {
+    id: string;
+    display_name: string;
+    token: string;
+}
+
 // login
-
-/**
- * property yang diperlukan saat login
- * LOGIN = username, password
- * UPDATE LOGIN = is_login, token, updated_at
- * SELECT PROFILE = id / user_id
- */
-
 interface ILogin {
     // only for update query to prevent 'get updateColumn' error
     id?: string;
-    is_login?: boolean;
+    is_login?: string;
     display_name?: string;
     updated_at?: string;
 }
@@ -84,10 +83,10 @@ interface ILoginPayload extends ILogin {
 }
 
 // profile
-interface iProfile {
+interface IProfile {
     user_id?: {
         id: string;
-        is_login: boolean;
+        is_login: string;
         username: string;
         display_name: string;
     }
@@ -97,7 +96,7 @@ interface iProfile {
 /**
  * @param username used when search user
  */
-interface IProfilePayload extends iProfile {
+interface IProfilePayload extends IProfile {
     username: string;
 }
 
@@ -135,6 +134,8 @@ export type {
     IResponse,
     // payload type
     PayloadTypes,
+    // logged user
+    ILoggedUsers,
     // register
     IRegisterPayload,
     // login

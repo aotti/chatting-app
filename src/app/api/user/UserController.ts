@@ -1,15 +1,12 @@
-import { DatabaseQueries } from "../../config/DatabaseQueries"
 import { respond } from "../helper"
-import { ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
+import { ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
 import filter from "../filter"
-import { SignJWT } from "jose"
 import { cookies } from "next/headers"
 import { NextRequest } from "next/server"
-import AuthController from "../token/AuthController"
+import { Controller } from "../Controller"
+import { LoginProfileType } from "../../context/LoginProfileContext"
 
-export default class UserController {
-    private dq = new DatabaseQueries()
-    private authController = new AuthController()
+export default class UserController extends Controller {
 
     async register(action: string, payload: Omit<IRegisterPayload, 'confirm_password'>) {
         let result: IResponse
@@ -61,7 +58,7 @@ export default class UserController {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 234),
+                selectColumn: this.dq.columnSelector('users', 34),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
@@ -109,18 +106,17 @@ export default class UserController {
             // object to run query
             const queryObject: IQueryUpdate = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 1),
+                selectColumn: this.dq.columnSelector('users', 15),
                 whereColumn: 'username',
                 whereValue: data.username,
                 get updateColumn() {
                     return { 
-                        is_login: !data.is_login,
                         updated_at: dateNow.toISOString()
                     }
                 }
             }
             // update data
-            const updateResponse = await this.dq.update<ILoginPayload>(queryObject)
+            const updateResponse = await this.dq.update<Pick<ILoginPayload, 'id'|'display_name'>>(queryObject)
             // fail 
             if(updateResponse.data === null) {
                 result = respond(500, updateResponse.error, [])
@@ -128,10 +124,18 @@ export default class UserController {
             // success
             else if(updateResponse.error === null) {
                 // login case - get profile
-                if(req) result = await this.getProfiles(action, updateResponse.data[0], req)
-                // logout case - return response
-                else {
-                    result = respond(204, action, updateResponse.data)
+                if(req) {
+                    const pushLoggedUsers = await this.alterLoggedUsers({
+                        action: 'push', 
+                        data: {
+                            id: updateResponse.data[0].id,
+                            display_name: updateResponse.data[0].display_name
+                        } 
+                    })
+                    // publish logged users data to client
+                    await this.pubnubPublish('logged-users', pushLoggedUsers)
+                    // get user profile
+                    result = await this.getProfiles(action, updateResponse.data[0], req)
                 }
             }
             // return response
@@ -176,32 +180,20 @@ export default class UserController {
             else if(selectResponse.error === null) {
                 // select response for query
                 // modify data for easier reading
-                type NewSelectResDataType = {
-                    id: string;
-                    display_name: string;
-                    is_login: boolean;
-                    description: string;
-                    token?: string;
-                }
+                type NewSelectResDataType = LoginProfileType & { token?: string }
                 let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
                 // login case
                 if(selectResponse.data[0]?.user_id?.username) {
                     newSelectResData = [{
                         id: selectResponse.data[0].user_id.id,
                         display_name: selectResponse.data[0].user_id.display_name,
-                        is_login: selectResponse.data[0].user_id.is_login,
+                        is_login: 'Online',
                         description: selectResponse.data[0].description
                     }]
                     // create access token 
-                    const accessToken = await this.authController.generateAccessToken(newSelectResData[0])
+                    const accessToken = await this.auth.generateAccessToken(newSelectResData[0])
                     // create refresh token
-                    const refreshSecret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET)
-                    const refreshToken = await new SignJWT(newSelectResData[0])
-                        .setProtectedHeader({ alg: 'HS256' })
-                        .setAudience('www.chatting-app.com')
-                        .setIssuer('chatting app')
-                        .setSubject(newSelectResData[0].display_name)
-                        .sign(refreshSecret)
+                    const refreshToken = await this.auth.generateRefreshToken(newSelectResData[0])
                     // save refresh token
                     cookies().set('refreshToken', refreshToken, { 
                         path: '/',
@@ -216,7 +208,27 @@ export default class UserController {
                 }
                 // get user case
                 else {
-                    newSelectResData = selectResponse.data
+                    newSelectResData = [] as NewSelectResDataType[]
+                    // check if user is logged in
+                    const selectResData = selectResponse.data as any[]
+                    for(let i in selectResData) {
+                        const data = selectResData[i] as NewSelectResDataType
+                        const loggedInUsers = await this.alterLoggedUsers({action: 'getUsers', data: {id: data.id}}) as ILoggedUsers[]
+                        // get logged in users
+                        if(loggedInUsers.length > 0) {
+                            const isVerified = await this.auth.verifyAccessToken(loggedInUsers[i].token)
+                            if(isVerified === 'verified') {
+                                newSelectResData.push({ ...data, is_login: 'Online' })
+                            }
+                            else if(isVerified === 'expired') {
+                                newSelectResData.push({ ...data, is_login: 'Away' })
+                            }
+                        }
+                        // offline users
+                        else {
+                            newSelectResData.push({ ...data, is_login: 'Offline' })
+                        }
+                    }
                 }
                 // response
                 result = respond(200, `${action} success`, newSelectResData)
@@ -232,7 +244,7 @@ export default class UserController {
         }
     }
 
-    async logout(action: string, payload: Pick<ILoginPayload, 'id' | 'is_login'>) {
+    async logout(action: string, payload: Pick<ILoginPayload, 'id'>) {
         let result: IResponse
         // filter payload
         const filteredPayload = filter(action, payload as ILoginPayload)
@@ -244,7 +256,7 @@ export default class UserController {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 23),
+                selectColumn: this.dq.columnSelector('users', 3),
                 whereColumn: 'id',
                 whereValue: payload.id
             }
@@ -256,18 +268,13 @@ export default class UserController {
             }
             // success
             else if(selectResponse.error === null) {
-                // ### CHECK IS LOGIN VALUE
-                const checkIsLogin = selectResponse.data[0].is_login === true
-                // if still logged in (true), set to logged out (false)
-                if(checkIsLogin) {
-                    // delete refresh token
-                    cookies().delete('refreshToken')
-                    // update user is_login
-                    result = await this.loggedUser(action, selectResponse.data[0])
-                }
-                else {
-                    result = respond(401, 'the action cannot be executed', [])
-                }
+                const filterLoggedUsers = await this.alterLoggedUsers({ action: 'filter', data: {id: payload.id} })
+                // publish logged users data to client
+                await this.pubnubPublish('logged-users', filterLoggedUsers)
+                // delete refresh token
+                cookies().delete('refreshToken')
+                // update user is_login
+                result = respond(204, action, [])
             }
             // return response
             return result

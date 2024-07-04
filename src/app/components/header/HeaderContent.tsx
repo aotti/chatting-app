@@ -9,7 +9,7 @@ export default function HeaderContent() {
             </div>
             {/* app name */}
             <div className="">
-                <p className="hidden md:block text-center text-2xl"> Chatting App </p>
+                <p className="hidden md:block text-center text-2xl"> Chatting App <br /> filter input empty & regex [a-z] </p>
             </div>
             {/* menu burger */}
             <MenuButton />

@@ -1,11 +1,9 @@
 import { IDirectChatPayload, IMessage, IQueryInsert, IResponse } from "../../types";
+import { Controller } from "../Controller";
 import filter from "../filter";
 import { respond } from "../helper";
-import { DatabaseQueries } from "../../config/DatabaseQueries";
-import Pubnub from "pubnub";
 
-export class ChatController {
-    private dq = new DatabaseQueries()
+export class ChatController extends Controller {
     
     async send(action: string, payload: IDirectChatPayload) {
         let result: IResponse
@@ -42,16 +40,8 @@ export class ChatController {
                     time: payload.time
                 }
                 // pubnub 
-                const pubpub = new Pubnub({
-                    subscribeKey: process.env.PUBNUB_SUB_KEY,
-                    publishKey: process.env.PUBNUB_PUB_KEY,
-                    userId: process.env.PUBNUB_UUID
-                })
                 const dmChannel = `DirectChat-${payload.user_to}`
-                await pubpub.publish({
-                    channel: dmChannel,
-                    message: publishMessage
-                })
+                await this.pubnubPublish(dmChannel, publishMessage)
                 // response data is number
                 result = respond(200, `${action} success`, [{ messageCount: insertResponse.data }])
             }

@@ -130,9 +130,9 @@ function login(payload: ILoginPayload): [boolean, string] {
 function logout(payload: ILoginPayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /id|is_login/g
+    const regexKeys = /id/g
     // filter payload key
-    const resultKey = keyCheck(payloadKeys, regexKeys, 2)
+    const resultKey = keyCheck(payloadKeys, regexKeys, 1)
     if(!resultKey[0]) return resultKey
     // payload value
     let resultValue: [boolean, string] = [true, '']
@@ -143,8 +143,6 @@ function logout(payload: ILoginPayload) {
         switch(key) {
             case 'id':
                 resultValue = uuidCheck(key, value); break
-            case 'is_login':
-                resultValue = valueCheck(key, value, 'boolean'); break
         }
         // error found
         if(!resultValue[0]) return resultValue

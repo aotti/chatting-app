@@ -33,8 +33,19 @@ export default class AuthController {
             return result
         }
     }
+
+    async verifyAccessToken(token) {
+        try {
+            // verify the token
+            const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
+            await jwtVerify(token, secret)
+            return 'verified'
+        } catch (error) {
+            return 'expired'
+        }
+    }
     
-    async generateAccessToken(jwtPayload: LoginProfileType) {
+    async generateAccessToken<T extends {display_name: string}>(jwtPayload: T) {
         const accessSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
         return await new SignJWT(jwtPayload)
             .setProtectedHeader({ alg: 'HS256' })
@@ -43,5 +54,15 @@ export default class AuthController {
             .setSubject(jwtPayload.display_name)
             .setExpirationTime('5m')
             .sign(accessSecret)
+    }
+
+    async generateRefreshToken(jwtPayload: LoginProfileType) {
+        const refreshSecret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET)
+        return await new SignJWT(jwtPayload)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setAudience('www.chatting-app.com')
+            .setIssuer('chatting app')
+            .setSubject(jwtPayload.display_name)
+            .sign(refreshSecret)
     }
 }

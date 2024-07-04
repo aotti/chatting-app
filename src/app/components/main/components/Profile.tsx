@@ -32,7 +32,7 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
             </div>
             {/* status */}
             <div className="font-semibold">
-                <p> {userData.is_login ? 'Online' : 'Offline'} </p>
+                <p> {userData.is_login} </p>
             </div>
             {/* num of group */}
             <div>

@@ -22,13 +22,18 @@ export default function ChattingPage() {
             { style: 'justify-start', author: 'yanto', text: 'message 2', time: messageTime }
         ]
     })
+    /*
+    buat variable static untuk simpan tiap user yg login
+    jika user login, push ke variable
+    jika user afk lebih dari 5 menit, anggap OFFLINE
+    jika user logout, anggap OFFLINE
+    selain itu anggap ONLINE
+     */
+    // public static onlineUsers: Pick<LoginProfileType, 'id'|'display_name'>[] = []
 
     // pubnub
     const pubsub = usePubNub()
     useEffect(() => {
-        // scroll to bottom
-        const messageContainer = qS('#messageContainer')
-        messageContainer.scrollTo({top: messageContainer.scrollHeight})
         // subscribe
         const dmChannel = `DirectChat-${isLogin[1].id}`
         pubsub.subscribe({ channels: [dmChannel] })
@@ -52,6 +57,13 @@ export default function ChattingPage() {
             pubsub.unsubscribe({ channels: ['chatting-app'] })
             pubsub.removeListener(publishedMessage)
         }
+    }, [])
+
+    // message items
+    useEffect(() => {
+        // scroll to bottom
+        const messageContainer = qS('#messageContainer')
+        messageContainer.scrollTo({top: messageContainer.scrollHeight})
     }, [messageItems])
 
     return (
@@ -63,7 +75,7 @@ export default function ChattingPage() {
                 </div>
                 <div className="">
                     <p> {chatWith.display_name} </p>
-                    <p> {chatWith.is_login ? 'Online' : 'Offline'} </p>
+                    <p> {chatWith.is_login} </p>
                 </div>
             </div>
             {/* chat box */}
@@ -104,7 +116,7 @@ function MessageItem({msgItem}: {msgItem: IMessage}) {
                 {/* author & status*/}
                 <p className="text-xs flex justify-between"> 
                     <span> {msgItem.author} </span>
-                    <span id="messageStatus"> {msgItem.style.includes('start') ? '✔' : '🕗'} </span>
+                    <span id="messageStatus" className="brightness-150"> {msgItem.style.includes('start') ? '✔' : '🕗'} </span>
                 </p>
                 {/* message */}
                 <p className="text-left"> {msgItem.text} </p>
@@ -143,6 +155,9 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
             time: messageTime
         }
     ])
+    // empty message input
+    const messageBox = qS('#messageBox') as HTMLInputElement
+    messageBox.value = ''
     // send message
     // fetch options
     const messageFetchOptions: RequestInit = {
@@ -157,14 +172,11 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
     const messageFetch: IResponse = await (await fetcher('/chat/direct', messageFetchOptions)).json()
     console.log(messageFetch);
     // message elements
-    const messageBox = qS('#messageBox') as HTMLInputElement
     const messageStatus = qSA('#messageStatus')
     
     // response
     switch(messageFetch.status) {
         case 200: 
-            // empty message input
-            messageBox.value = ''
             // change message status
             messageStatus[messageStatus.length-1].textContent = '✔'
             // check new access token

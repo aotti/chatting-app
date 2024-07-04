@@ -94,8 +94,8 @@ export class DatabaseQueries {
      * - table words = select 'id, category, word' = 123; select 'id, word' = 13;
      * 
      * list of column:
-     * - users - id | is_login | username | password | display_name | created_at | updated_at | deleted_at
-     * - profiles - id | user_id (id, is_login, username, display_name) | description | created_at | updated_at | deleted_at
+     * - users - id | is_login❌| username | password | display_name | created_at | updated_at | deleted_at
+     * - profiles - id | user_id (id, username, display_name) | description | created_at | updated_at | deleted_at
      * - messages - 
      * - direct_chats - 
      * - group_chats - 
@@ -112,7 +112,7 @@ export class DatabaseQueries {
         }
         // for profiles table
         else if(type === 'profiles') {
-            const pickerList: string[] = ['id', 'user_id(id, is_login, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
+            const pickerList: string[] = ['id', 'user_id(id, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
             selectedColumns.push(columnPicker(pickerList))
         }
         // for messages table

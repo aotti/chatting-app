@@ -9,6 +9,8 @@ export default function Page() {
     }
     // get secret
     const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
+    // get decrypt key
+    const decryptKey = process.env.CIPHER_KEY
     /**
      * dark mode files:
      * index - header, footer
@@ -25,5 +27,5 @@ export default function Page() {
      * profile - pink 800
      */
     // send payload to home
-    return <Index secret={accessTokenSecret} pubnubKeys={pubnubKeys} />
+    return <Index accessSecret={accessTokenSecret} pubnubKeys={pubnubKeys} decryptKey={decryptKey} />
 }
