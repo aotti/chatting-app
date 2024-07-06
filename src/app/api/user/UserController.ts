@@ -1,10 +1,11 @@
 import { respond } from "../helper"
-import { ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
+import { IEncrypted, ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
 import filter from "../filter"
 import { cookies } from "next/headers"
 import { NextRequest } from "next/server"
 import { Controller } from "../Controller"
 import { LoginProfileType } from "../../context/LoginProfileContext"
+import AuthController from "../token/AuthController"
 
 export default class UserController extends Controller {
 
@@ -125,7 +126,7 @@ export default class UserController extends Controller {
             else if(updateResponse.error === null) {
                 // login case - get profile
                 if(req) {
-                    const pushLoggedUsers = await this.alterLoggedUsers({
+                    const pushLoggedUsers: IEncrypted = await this.alterLoggedUsers({
                         action: 'push', 
                         data: {
                             id: updateResponse.data[0].id,
@@ -209,18 +210,46 @@ export default class UserController extends Controller {
                 // get user case
                 else {
                     newSelectResData = [] as NewSelectResDataType[]
+                    // get user data from access token
+                    const accessToken = req.headers.get('authorization').replace('Bearer ', '')
+                    if(accessToken !== 'null') {
+                        let verifiedUser = await AuthController.verifyAccessToken({action: 'verify-payload', token: accessToken})
+                        // token expired, renew with refresh token
+                        if(!verifiedUser) {
+                            // check refresh token
+                            const refreshToken = cookies().get('refreshToken')?.value
+                            // refresh token invalid
+                            if(!refreshToken) return result = respond(403, `failed to ${action}`, [])
+                            // create new access token
+                            const newAccessToken = await this.auth.renewAccessToken(refreshToken, true)
+                            verifiedUser = newAccessToken.payload;
+                            // add token prop to response data
+                            (newSelectResData as {token: string}[]).push({
+                                token: newAccessToken.token
+                            })
+                        }
+                        // update my token (online/offline)
+                        const updatedToken: IEncrypted = await this.alterLoggedUsers({action: 'renew', data: {id: verifiedUser.id, display_name: verifiedUser.display_name}})
+                        console.log(updatedToken 
+                            ? `my token updated ${verifiedUser.display_name}` 
+                            : `update token failed ${verifiedUser.display_name}`
+                        );
+                        // publish updated token
+                        await this.pubnubPublish('logged-users', updatedToken)
+                    }
+                    
                     // check if user is logged in
                     const selectResData = selectResponse.data as any[]
                     for(let i in selectResData) {
                         const data = selectResData[i] as NewSelectResDataType
-                        const loggedInUsers = await this.alterLoggedUsers({action: 'getUsers', data: {id: data.id}}) as ILoggedUsers[]
+                        const loggedInUsers: ILoggedUsers[] = await this.alterLoggedUsers({action: 'getUsers', data: {id: data.id}})
                         // get logged in users
                         if(loggedInUsers.length > 0) {
-                            const isVerified = await this.auth.verifyAccessToken(loggedInUsers[i].token)
-                            if(isVerified === 'verified') {
+                            const isVerified = await AuthController.verifyAccessToken({action: 'verify-only', token: loggedInUsers[i].token})
+                            if(isVerified) {
                                 newSelectResData.push({ ...data, is_login: 'Online' })
                             }
-                            else if(isVerified === 'expired') {
+                            else {
                                 newSelectResData.push({ ...data, is_login: 'Away' })
                             }
                         }
@@ -268,7 +297,7 @@ export default class UserController extends Controller {
             }
             // success
             else if(selectResponse.error === null) {
-                const filterLoggedUsers = await this.alterLoggedUsers({ action: 'filter', data: {id: payload.id} })
+                const filterLoggedUsers: IEncrypted = await this.alterLoggedUsers({ action: 'filter', data: {id: payload.id} })
                 // publish logged users data to client
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token

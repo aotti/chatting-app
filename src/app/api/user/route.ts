@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         [key]: req.nextUrl.searchParams.get('display_name')
     }
     // get users
-    const result = await userController.getProfiles(action, queryPayload)
+    const result = await userController.getProfiles(action, queryPayload, req)
     // response from controller
     return NextResponse.json(result, { status: result.status })
 }

@@ -26,6 +26,8 @@ export function SearchBox() {
 async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
     ev.preventDefault()
 
+    // access token
+    const token = window.localStorage.getItem('accessToken')
     // error message
     const errorMessage = qS('#search_message')
     // form inputs
@@ -36,7 +38,10 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
     // search user
     // fetch options
     const searchFetchOptions: RequestInit = {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+            'authorization': `Bearer ${token}`
+        }
     }
     // fetching
     errorMessage.textContent = 'searching..'
@@ -45,6 +50,12 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
     switch(searchResponse.status) {
         case 200:
             errorMessage.textContent = ``
+            // update access token if exist
+            if(searchResponse.data[0]?.token) {
+                window.localStorage.setItem('accessToken', searchResponse.data[0].token)
+                // delete token array
+                searchResponse.data.shift()
+            }
             // set users found state
             setUsersFound(searchResponse.data)
             break

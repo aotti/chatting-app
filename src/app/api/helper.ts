@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv } from "crypto";
-import { IResponse } from "../types";
+import { IEncrypted, IResponse } from "../types";
 
 export function respond(s: number, m: string | object, d: any[]): IResponse {
     return {
@@ -27,7 +27,7 @@ export function api_action(pathname: string, method: string) {
     return `${altMethod} ${action}`
 }
 
-export async function encryptData(data: string) {
+export async function encryptData(data: string): Promise<IEncrypted> {
     // stuff for encrypt
     const key = Buffer.from(process.env.CIPHER_KEY, 'hex')
     const iv = Buffer.from(process.env.CIPHER_IV, 'hex')

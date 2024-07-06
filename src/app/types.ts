@@ -1,5 +1,6 @@
 import { PostgrestError } from "@supabase/supabase-js";
 import { UUID } from "crypto";
+import { LoginProfileType } from "./context/LoginProfileContext";
 
 // ~~ POSTGREST RETURN TYPE PROMISE ~~
 type PG_PromiseType<Data> = Promise<{ data: Data[] | null, error: PostgrestError | null }>
@@ -46,6 +47,37 @@ interface IResponse {
     message: string | object;
     data: any[];
 }
+
+// encrypt data
+interface IEncrypted {
+    iv: string;
+    encryptedData: string;
+}
+
+// token verify
+interface ITokenVerifyOnly {
+    action: 'verify-only';
+    token: string;
+}
+interface ITokenVerifyPayload {
+    action: 'verify-payload';
+    token: string;
+}
+
+type TokenVerifyReturn<T> = ReturnType<() => T extends ITokenVerifyOnly ? boolean : LoginProfileType>
+type TokenVerifyType = ITokenVerifyOnly | ITokenVerifyPayload
+
+// controller
+interface IPushLoggedUsers {
+    id: string;
+    display_name: string;
+}
+
+interface IFilterLoggedUsers {
+    id: string;
+}
+
+type LoggedUsersType = {action: 'push'; data: IPushLoggedUsers} | {action: 'filter'; data: IFilterLoggedUsers} | {action: 'getUsers'; data: IFilterLoggedUsers} | {action: 'renew'; data: IPushLoggedUsers}
 
 // payload types
 type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload
@@ -132,6 +164,13 @@ export type {
     IQueryUpdate,
     // response
     IResponse,
+    // encrypt
+    IEncrypted,
+    // token verify
+    TokenVerifyReturn,
+    TokenVerifyType,
+    // controller
+    LoggedUsersType,
     // payload type
     PayloadTypes,
     // logged user

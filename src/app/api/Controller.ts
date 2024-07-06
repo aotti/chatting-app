@@ -1,25 +1,15 @@
 import Pubnub from "pubnub";
-import { ILoggedUsers } from "../types";
+import { ILoggedUsers, LoggedUsersType } from "../types";
 import { DatabaseQueries } from "../config/DatabaseQueries";
 import AuthController from "./token/AuthController";
 import { encryptData } from "./helper";
 
-interface IPushLoggedUsers {
-    id: string;
-    display_name: string;
-}
-
-interface IFilterLoggedUsers {
-    id: string;
-}
-
-type LoggedUsersType = {action: 'push'; data: IPushLoggedUsers} | {action: 'filter'; data: IFilterLoggedUsers} | {action: 'getUsers'; data: IFilterLoggedUsers}
+// log users online
+let loggedUsers: ILoggedUsers[] = []
 
 export class Controller {
     protected dq = new DatabaseQueries()
     protected auth = new AuthController()
-    // log users online
-    protected static loggedUsers: ILoggedUsers[] = []
 
     // pubnub for publish
     protected pubpub: Pubnub
@@ -40,28 +30,45 @@ export class Controller {
         })
     }
 
-    protected async alterLoggedUsers(args: LoggedUsersType) {
+    protected async alterLoggedUsers<T>(args: LoggedUsersType): Promise<T> {
         if(args.action === 'push') {
             // create token for logged users
             const loggedUserToken = await this.auth.generateAccessToken({ display_name: args.data.display_name })
             // push to logged users
-            Controller.loggedUsers.push({
+            loggedUsers.push({
                 ...args.data,
                 token: loggedUserToken
             })
             // hash the logged users 
-            const encryptedLoggedUsers = await encryptData(JSON.stringify(Controller.loggedUsers))
-            return encryptedLoggedUsers
+            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            console.log(args.action, {loggedUsers})
+            return encryptedLoggedUsers as T
         }
         else if(args.action === 'filter') {
             // pop logout user from logged users
-            Controller.loggedUsers = Controller.loggedUsers.filter(u => u.id !== args.data.id)
+            loggedUsers = loggedUsers.filter(u => u.id !== args.data.id)
             // hash the logged users 
-            const encryptedLoggedUsers = await encryptData(JSON.stringify(Controller.loggedUsers))
-            return encryptedLoggedUsers
+            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            console.log(args.action, {loggedUsers})
+            return encryptedLoggedUsers as T
         }
         else if(args.action === 'getUsers') {
-            return Controller.loggedUsers.filter(u => u.id === args.data.id)
+            console.log(args.action, {loggedUsers})
+            return loggedUsers.filter(u => u.id === args.data.id) as T
+        }
+        else if(args.action === 'renew') {
+            // create token for logged users
+            const loggedUserToken = await this.auth.generateAccessToken({ display_name: args.data.display_name })
+            // find user 
+            const renewUser = loggedUsers.map(user => user.id).indexOf(args.data.id)
+            if(renewUser === -1) return null
+            // user found
+            // update my token
+            loggedUsers[renewUser].token = loggedUserToken
+            // hash the logged users 
+            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            console.log(args.action, {loggedUsers})
+            return encryptedLoggedUsers as T
         }
     }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Dispatch, SetStateAction } from "react"
 import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
@@ -146,31 +146,51 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
             pubnub.removeListener(publishedUsersStatus)
         }
     }, [])
-
-    if(typeof document !== 'undefined') {
+    
+    // change user status (online/offline)
+    useEffect(() => {
         const updateUserStatus = async () => {
-            const expiredUsers = await getExpiredUsers(decryptKey, accessSecret)
+            const userStates = {
+                setIsLogin: setIsLogin,
+                setChatWith: setChatWith,
+                setUsersFound: setUsersFound
+            }
+            const expiredUsers = await getExpiredUsers(decryptKey, accessSecret, userStates)
+            console.log({userTimeout});
+            
+            // change isLogin status
+            if(!isLogin[0]) return
+            const isLoginUser = expiredUsers.map(v => v.id).indexOf(isLogin[1].id)
+            // user not found
+            if(isLoginUser === -1) return
+            // check if user alr have timeout
+            const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expiredUsers[isLoginUser].id)
+            if(isUserTimeout !== -1) return
+            // user is away
+            isLogin[1].is_login = 'Away'
+            setIsLogin(isLogin)
+
             // change chat with user status (status on chatting page)
             if(!chatWith) return
             const chatUser = expiredUsers.map(v => v.id).indexOf(chatWith.id)
+            // user not found
+            if(chatUser === -1) return
             // user is away
-            if(chatUser !== -1) {
-                // check if user alr have timeout
-                const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expiredUsers[chatUser].id)
-                if(isUserTimeout !== -1) return
-                // if user dont have timeout
-                setChatWith(user => { return {...user, is_login: expiredUsers[chatUser].is_login} })
-            }
+            setChatWith(user => { return {...user, is_login: 'Away'} })
+
             // change user found status (profile status)
             for(let expUser of expiredUsers) {
                 const foundUser = usersFound.map(u => u.id).indexOf(expUser.id)
                 if(foundUser !== -1) {
-                    usersFound[foundUser].is_login = expUser.is_login
+                    usersFound[foundUser].is_login = 'Away'
                     setUsersFound(usersFound)
                     // set timeout for away user before going offline
                     const goingOffline = {
                         user_id: expUser.id,
                         timeout: setTimeout(() => {
+                            // change isLogin status
+                            isLogin[1].is_login = 'Offline'
+                            setIsLogin(isLogin)
                             // set chat with to offline
                             setChatWith(user => { return {...user, is_login: 'Offline'} })
                             // set users found to offline 
@@ -181,14 +201,20 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                     setUserTimeout(user => [...user, goingOffline])
                 }
             }
-            console.log({userTimeout});
-            
         }
-        
-        document.onblur = async () => await updateUserStatus()
-        document.onclick = async () => await updateUserStatus()
-        document.onkeyup = async () => await updateUserStatus()
-    }
+
+        document.addEventListener('focus', updateUserStatus)
+        document.addEventListener('blur', updateUserStatus)
+        document.addEventListener('click', updateUserStatus)
+        document.addEventListener('keyup', updateUserStatus)
+
+        return () => {
+            document.removeEventListener('focus', updateUserStatus)
+            document.removeEventListener('blur', updateUserStatus)
+            document.removeEventListener('click', updateUserStatus)
+            document.removeEventListener('keyup', updateUserStatus)
+        }
+    }, [usersFound, chatWith, isLogin])
     
     return (
         <DarkModeContext.Provider value={ darkModeStates }>
@@ -240,7 +266,12 @@ async function verifyAccessToken(token: string, accessSecret: string, onlyVerify
     }
 }
 
-async function getExpiredUsers(decryptKey: string, accessSecret: string) {
+type IUserStates = {
+    setIsLogin: Dispatch<SetStateAction<[boolean, LoginProfileType]>>;
+    setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
+    setUsersFound: Dispatch<SetStateAction<LoginProfileType[]>>;
+}
+async function getExpiredUsers(decryptKey: string, accessSecret: string, userStates: IUserStates) {
     try {
         // nonce and encrypted data
         const iv = window.localStorage.getItem('iv')
@@ -249,18 +280,40 @@ async function getExpiredUsers(decryptKey: string, accessSecret: string) {
         const decrypted = await decryptData({key: decryptKey, iv: iv, encryptedData: encryptedData})
         const filterDecrypted = decrypted.decryptedData.match(/\[.*\]/)[0]
         // verify the token
-        const expiredUsers = [] as Record<'id'|'is_login', string>[]
+        const expiredUsers = [] as {id: string}[]
         const usersData = JSON.parse(filterDecrypted) as ILoggedUsers[]
         for(let user of usersData) {
-            const isVerified = await verifyAccessToken(user.token, accessSecret)
+            const isVerified = await verifyAccessToken(user.token, accessSecret, true) as boolean
             // token expired
             if(!isVerified) {
-                // set user is_login to Away
-                // then setTimeout (5min) before set to Offline 
-                // ### buat useState untuk setTimeout
-                expiredUsers.push({
-                    id: user.id,
-                    is_login: 'Away'
+                // push id of user who is away
+                expiredUsers.push({ id: user.id })
+            }
+            // token active
+            else {
+                // set users to online
+                const { setIsLogin, setChatWith, setUsersFound }: IUserStates = userStates
+                // my login data
+                setIsLogin(data => {
+                    if(data != null && data[1].id === user.id) {
+                        data[1].is_login = 'Online'
+                        return data
+                    }
+                })
+                // user chat with status
+                setChatWith(data => {
+                    if(data != null && data.id === user.id) {
+                        data.is_login = 'Online'
+                        return data
+                    }
+                })
+                // users found status
+                setUsersFound(data => {
+                    const isUserMatch = data != null ? data.map(u => u.id).indexOf(user.id) : -1
+                    if(isUserMatch !== -1) {
+                        data[isUserMatch].is_login = 'Online'
+                        return data
+                    }
                 })
             }
         }
