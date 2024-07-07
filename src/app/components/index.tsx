@@ -106,12 +106,12 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
             // token expired
             // create new access token
             const accessTokenOptions: RequestInit = { method: 'GET' }
-            const resetAccessToken: IResponse = await (await fetcher('/token', accessTokenOptions)).json()
+            const renewAccessToken: IResponse = await (await fetcher('/token', accessTokenOptions)).json()
             // response api
-            switch(resetAccessToken.status) {
+            switch(renewAccessToken.status) {
                 case 201: 
                     // get access token
-                    const getAccessToken = resetAccessToken.data[0].token
+                    const getAccessToken = renewAccessToken.data[0].token
                     // verify token
                     const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
                     // save token to local storage
@@ -120,7 +120,9 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                     setIsLogin([true, verifiedUser as LoginProfileType])
                     break
                 default: 
-                    console.log(resetAccessToken)
+                    // remove access token if exist
+                    window.localStorage.removeItem('accessToken')
+                    console.log(renewAccessToken)
                     break
             }
         })
@@ -135,8 +137,11 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
         const publishedUsersStatus: ListenerParameters = {
             message: (data) => {
                 const encryptedUsers = data.message as Record<'iv'|'encryptedData', string>
-                window.localStorage.setItem('loggedUsers', encryptedUsers.encryptedData)
-                window.localStorage.setItem('iv', encryptedUsers.iv)
+                if(typeof encryptedUsers === 'object') {
+                    window.localStorage.setItem('loggedUsers', encryptedUsers.encryptedData)
+                    window.localStorage.setItem('iv', encryptedUsers.iv)
+                }
+                else console.log({pubnub: `update token failed (${encryptedUsers})`})
             }
         }
         pubnub.addListener(publishedUsersStatus)
@@ -151,46 +156,38 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
     useEffect(() => {
         const updateUserStatus = async () => {
             const userStates = {
-                setIsLogin: setIsLogin,
                 setChatWith: setChatWith,
                 setUsersFound: setUsersFound
             }
             const expiredUsers = await getExpiredUsers(decryptKey, accessSecret, userStates)
             console.log({userTimeout});
-            
-            // change isLogin status
-            if(!isLogin[0]) return
-            const isLoginUser = expiredUsers.map(v => v.id).indexOf(isLogin[1].id)
-            // user not found
-            if(isLoginUser === -1) return
-            // check if user alr have timeout
-            const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expiredUsers[isLoginUser].id)
-            if(isUserTimeout !== -1) return
-            // user is away
-            isLogin[1].is_login = 'Away'
-            setIsLogin(isLogin)
 
-            // change chat with user status (status on chatting page)
-            if(!chatWith) return
-            const chatUser = expiredUsers.map(v => v.id).indexOf(chatWith.id)
-            // user not found
-            if(chatUser === -1) return
-            // user is away
-            setChatWith(user => { return {...user, is_login: 'Away'} })
+            // filter users timeout
+            if(userTimeout.length > 0) {
+                const offlineUsers = []
+                new Map(userTimeout.map(v => [v.user_id, v])).forEach(v => offlineUsers.push(v))
+                setUserTimeout(offlineUsers)
+            }
 
             // change user found status (profile status)
             for(let expUser of expiredUsers) {
-                const foundUser = usersFound.map(u => u.id).indexOf(expUser.id)
+                const foundUser = usersFound ? usersFound.map(u => u.id).indexOf(expUser.id) : -1
                 if(foundUser !== -1) {
+                    // ### KALO SUDAH BALIK ONLINE, HAPUS DATA TIMEOUT
+                    // ### AGAR BISA FAKE OFFLINE LAGI
+                    // check if user alr have timeout 
+                    const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expUser.id)
+                    console.log({isUserTimeout});
+                    // user alr timeout
+                    if(isUserTimeout !== -1) return
+                    // set user found to away
                     usersFound[foundUser].is_login = 'Away'
                     setUsersFound(usersFound)
                     // set timeout for away user before going offline
                     const goingOffline = {
                         user_id: expUser.id,
                         timeout: setTimeout(() => {
-                            // change isLogin status
-                            isLogin[1].is_login = 'Offline'
-                            setIsLogin(isLogin)
+                            console.log(`${usersFound[foundUser].display_name} is offline`)
                             // set chat with to offline
                             setChatWith(user => { return {...user, is_login: 'Offline'} })
                             // set users found to offline 
@@ -201,6 +198,13 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                     setUserTimeout(user => [...user, goingOffline])
                 }
             }
+            
+            // change chat with user status (status on chatting page)
+            const chatUser = chatWith ? expiredUsers.map(v => v.id).indexOf(chatWith.id) : -1
+            // user not found
+            if(chatUser === -1) return
+            // chat user is away
+            setChatWith(user => { return {...user, is_login: 'Away'} })
         }
 
         document.addEventListener('focus', updateUserStatus)
@@ -267,7 +271,6 @@ async function verifyAccessToken(token: string, accessSecret: string, onlyVerify
 }
 
 type IUserStates = {
-    setIsLogin: Dispatch<SetStateAction<[boolean, LoginProfileType]>>;
     setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
     setUsersFound: Dispatch<SetStateAction<LoginProfileType[]>>;
 }
@@ -292,20 +295,16 @@ async function getExpiredUsers(decryptKey: string, accessSecret: string, userSta
             // token active
             else {
                 // set users to online
-                const { setIsLogin, setChatWith, setUsersFound }: IUserStates = userStates
-                // my login data
-                setIsLogin(data => {
-                    if(data != null && data[1].id === user.id) {
-                        data[1].is_login = 'Online'
-                        return data
-                    }
-                })
+                const { setChatWith, setUsersFound }: IUserStates = userStates
+                console.log(user);
+                
                 // user chat with status
                 setChatWith(data => {
-                    if(data != null && data.id === user.id) {
+                    if(data != null && data?.id === user.id) {
                         data.is_login = 'Online'
                         return data
                     }
+                    else return data
                 })
                 // users found status
                 setUsersFound(data => {
@@ -314,6 +313,7 @@ async function getExpiredUsers(decryptKey: string, accessSecret: string, userSta
                         data[isUserMatch].is_login = 'Online'
                         return data
                     }
+                    else return data
                 })
             }
         }

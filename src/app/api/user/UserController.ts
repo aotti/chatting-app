@@ -235,7 +235,8 @@ export default class UserController extends Controller {
                             : `update token failed ${verifiedUser.display_name}`
                         );
                         // publish updated token
-                        await this.pubnubPublish('logged-users', updatedToken)
+                        if(updatedToken) await this.pubnubPublish('logged-users', updatedToken)
+                        else await this.pubnubPublish('logged-users', JSON.stringify(updatedToken))
                     }
                     
                     // check if user is logged in
