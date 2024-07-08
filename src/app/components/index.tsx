@@ -20,6 +20,11 @@ interface IndexProps {
     pubnubKeys: Record<'sub'|'pub'|'uuid', string>;
     decryptKey: string;
 }
+// timeout state
+interface IUserTimeout {
+    user_id: string;
+    timeout: NodeJS.Timeout;
+}
 
 export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexProps) {
     // pubnub 
@@ -79,12 +84,7 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
         setChatWith: setChatWith
     }
 
-    // timeout state
-    interface UserTimeout {
-        user_id: string;
-        timeout: NodeJS.Timeout
-    }
-    const [userTimeout, setUserTimeout] = useState<UserTimeout[]>([])
+    const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])
     
     // verify access token
     useEffect(() => {
@@ -157,18 +157,10 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
         const updateUserStatus = async () => {
             const userStates = {
                 setChatWith: setChatWith,
-                setUsersFound: setUsersFound
+                setUsersFound: setUsersFound,
+                setUserTimeout: setUserTimeout
             }
             const expiredUsers = await getExpiredUsers(decryptKey, accessSecret, userStates)
-            console.log({userTimeout});
-
-            // filter users timeout
-            if(userTimeout.length > 0) {
-                const offlineUsers = []
-                new Map(userTimeout.map(v => [v.user_id, v])).forEach(v => offlineUsers.push(v))
-                setUserTimeout(offlineUsers)
-            }
-
             // change user found status (profile status)
             for(let expUser of expiredUsers) {
                 const foundUser = usersFound ? usersFound.map(u => u.id).indexOf(expUser.id) : -1
@@ -177,14 +169,15 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                     // ### AGAR BISA FAKE OFFLINE LAGI
                     // check if user alr have timeout 
                     const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expUser.id)
-                    console.log({isUserTimeout});
                     // user alr timeout
                     if(isUserTimeout !== -1) return
                     // set user found to away
-                    usersFound[foundUser].is_login = 'Away'
-                    setUsersFound(usersFound)
+                    setUsersFound(users => {
+                        users[foundUser].is_login = 'Away'
+                        return users
+                    })
                     // set timeout for away user before going offline
-                    const goingOffline = {
+                    const goingOffline: IUserTimeout = {
                         user_id: expUser.id,
                         timeout: setTimeout(() => {
                             console.log(`${usersFound[foundUser].display_name} is offline`)
@@ -193,7 +186,7 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                             // set users found to offline 
                             usersFound[foundUser].is_login = 'Offline'
                             setUsersFound(usersFound)
-                        }, 10_000) // 5min
+                        }, 60_000) // 5min 
                     }
                     setUserTimeout(user => [...user, goingOffline])
                 }
@@ -207,18 +200,16 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
             setChatWith(user => { return {...user, is_login: 'Away'} })
         }
 
-        document.addEventListener('focus', updateUserStatus)
         document.addEventListener('blur', updateUserStatus)
         document.addEventListener('click', updateUserStatus)
         document.addEventListener('keyup', updateUserStatus)
 
         return () => {
-            document.removeEventListener('focus', updateUserStatus)
             document.removeEventListener('blur', updateUserStatus)
             document.removeEventListener('click', updateUserStatus)
             document.removeEventListener('keyup', updateUserStatus)
         }
-    }, [usersFound, chatWith, isLogin])
+    }, [usersFound, chatWith, isLogin, userTimeout])
     
     return (
         <DarkModeContext.Provider value={ darkModeStates }>
@@ -273,6 +264,7 @@ async function verifyAccessToken(token: string, accessSecret: string, onlyVerify
 type IUserStates = {
     setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
     setUsersFound: Dispatch<SetStateAction<LoginProfileType[]>>;
+    setUserTimeout: Dispatch<SetStateAction<IUserTimeout[]>>;
 }
 async function getExpiredUsers(decryptKey: string, accessSecret: string, userStates: IUserStates) {
     try {
@@ -295,9 +287,18 @@ async function getExpiredUsers(decryptKey: string, accessSecret: string, userSta
             // token active
             else {
                 // set users to online
-                const { setChatWith, setUsersFound }: IUserStates = userStates
-                console.log(user);
-                
+                const { setChatWith, setUsersFound, setUserTimeout }: IUserStates = userStates
+                // remove timeout user if exist
+                setUserTimeout(data => {
+                    if(data.length > 0) {
+                        // clear timeout
+                        const getTimeout = data.filter(u => u.user_id === user.id)[0]
+                        clearTimeout(getTimeout.timeout)
+                        // return data with filtered user
+                        return data.filter(u => u.user_id !== user.id)
+                    }
+                    else return data
+                })
                 // user chat with status
                 setChatWith(data => {
                     if(data != null && data?.id === user.id) {
