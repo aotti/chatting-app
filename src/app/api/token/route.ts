@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
         data: []
     }, { status: 403 })
     // response
-    const result = await authController.createToken(action, refreshToken, req)
+    const result = await authController.createToken(action, refreshToken)
     return NextResponse.json(result, { status: result.status })
 }
