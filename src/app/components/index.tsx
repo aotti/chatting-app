@@ -4,9 +4,8 @@ import { useState, useEffect, Dispatch, SetStateAction } from "react"
 import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
-import { jwtVerify } from "jose"
-import { fetcher } from "./helper"
-import { ILoggedUsers, IResponse } from "../types"
+import { fetcher, verifyAccessToken } from "./helper"
+import { IHistoryMessagePayload, ILoggedUsers, IResponse } from "../types"
 import { DarkModeContext } from "../context/DarkModeContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
@@ -18,7 +17,10 @@ import { decryptData } from "../api/helper"
 interface IndexProps {
     accessSecret: string;
     pubnubKeys: Record<'sub'|'pub'|'uuid', string>;
-    decryptKey: string;
+    crypto: {
+        key: string;
+        iv: string;
+    };
 }
 // timeout state
 interface IUserTimeout {
@@ -26,7 +28,7 @@ interface IUserTimeout {
     timeout: NodeJS.Timeout;
 }
 
-export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexProps) {
+export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) {
     // pubnub 
     const pubnub = new Pubnub({
         subscribeKey: pubnubKeys.sub,
@@ -78,10 +80,14 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
 
     // chat with context
     const [chatWith, setChatWith] = useState<LoginProfileType>(null)
+    // history messages
+    const [historyMessages, setHistoryMessages] = useState<IHistoryMessagePayload['message_id'][]>(null)
     // chat with states
     const chatWithStates = {
         chatWith: chatWith,
-        setChatWith: setChatWith
+        setChatWith: setChatWith,
+        historyMessages: historyMessages,
+        setHistoryMessages: setHistoryMessages
     }
 
     const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])
@@ -136,10 +142,9 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
         // listener
         const publishedUsersStatus: ListenerParameters = {
             message: (data) => {
-                const encryptedUsers = data.message as Record<'iv'|'encryptedData', string>
-                if(typeof encryptedUsers === 'object') {
-                    window.localStorage.setItem('loggedUsers', encryptedUsers.encryptedData)
-                    window.localStorage.setItem('iv', encryptedUsers.iv)
+                const encryptedUsers = data.message as string
+                if(encryptedUsers !== 'null') {
+                    window.localStorage.setItem('loggedUsers', encryptedUsers)
                 }
                 else console.log({pubnub: `update token failed (${encryptedUsers})`})
             }
@@ -155,49 +160,52 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
     // change user status (online/offline)
     useEffect(() => {
         const updateUserStatus = async () => {
-            const userStates = {
-                setChatWith: setChatWith,
-                setUsersFound: setUsersFound,
-                setUserTimeout: setUserTimeout
-            }
-            const expiredUsers = await getExpiredUsers(decryptKey, accessSecret, userStates)
-            // change user found status (profile status)
-            for(let expUser of expiredUsers) {
-                const foundUser = usersFound ? usersFound.map(u => u.id).indexOf(expUser.id) : -1
-                if(foundUser !== -1) {
-                    // ### KALO SUDAH BALIK ONLINE, HAPUS DATA TIMEOUT
-                    // ### AGAR BISA FAKE OFFLINE LAGI
-                    // check if user alr have timeout 
-                    const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expUser.id)
-                    // user alr timeout
-                    if(isUserTimeout !== -1) return
-                    // set user found to away
-                    setUsersFound(users => {
-                        users[foundUser].is_login = 'Away'
-                        return users
-                    })
-                    // set timeout for away user before going offline
-                    const goingOffline: IUserTimeout = {
-                        user_id: expUser.id,
-                        timeout: setTimeout(() => {
-                            console.log(`${usersFound[foundUser].display_name} is offline`)
-                            // set chat with to offline
-                            setChatWith(user => { return {...user, is_login: 'Offline'} })
-                            // set users found to offline 
-                            usersFound[foundUser].is_login = 'Offline'
-                            setUsersFound(usersFound)
-                        }, 60_000) // 5min 
-                    }
-                    setUserTimeout(user => [...user, goingOffline])
+            try {
+                const userStates = {
+                    setChatWith: setChatWith,
+                    setUsersFound: setUsersFound,
+                    setUserTimeout: setUserTimeout
                 }
+                const expiredUsers = await getExpiredUsers(crypto, accessSecret, userStates)
+                if(!expiredUsers) return
+                // change user found status (profile status)
+                for(let expUser of expiredUsers) {
+                    const foundUser = usersFound ? usersFound.map(u => u.id).indexOf(expUser.id) : -1
+                    if(foundUser !== -1) {
+                        // check if user alr have timeout 
+                        const isUserTimeout = userTimeout.map(u => u.user_id).indexOf(expUser.id)
+                        // user alr timeout
+                        if(isUserTimeout !== -1) return
+                        // set user found to away
+                        setUsersFound(users => {
+                            users[foundUser].is_login = 'Away'
+                            return users
+                        })
+                        // set timeout for away user before going offline
+                        const goingOffline: IUserTimeout = {
+                            user_id: expUser.id,
+                            timeout: setTimeout(() => {
+                                console.log(`${usersFound[foundUser].display_name} is offline`)
+                                // set chat with to offline
+                                setChatWith(user => { return {...user, is_login: 'Offline'} })
+                                // set users found to offline 
+                                usersFound[foundUser].is_login = 'Offline'
+                                setUsersFound(usersFound)
+                            }, 60_000) // 5min 
+                        }
+                        setUserTimeout(user => [...user, goingOffline])
+                    }
+                }
+                
+                // change chat with user status (status on chatting page)
+                const chatUser = chatWith ? expiredUsers.map(v => v.id).indexOf(chatWith.id) : -1
+                // user not found
+                if(chatUser === -1) return
+                // chat user is away
+                setChatWith(user => { return {...user, is_login: 'Away'} })
+            } catch (error) {
+                console.log('updateUserStatus error', error)
             }
-            
-            // change chat with user status (status on chatting page)
-            const chatUser = chatWith ? expiredUsers.map(v => v.id).indexOf(chatWith.id) : -1
-            // user not found
-            if(chatUser === -1) return
-            // chat user is away
-            setChatWith(user => { return {...user, is_login: 'Away'} })
         }
 
         document.addEventListener('blur', updateUserStatus)
@@ -211,6 +219,8 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
         }
     }, [usersFound, chatWith, isLogin, userTimeout])
     
+    // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
+    // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
     return (
         <DarkModeContext.Provider value={ darkModeStates }>
             <LoginProfileContext.Provider value={ loginProfileStates }>
@@ -225,7 +235,7 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
                                     </header>
                                     {/* main */}
                                     <main className="row-span-8 h-full dark:text-white">
-                                        <MainContent />
+                                        <MainContent crypto={crypto} />
                                     </main>
                                     {/* footer */}
                                     <footer className="row-span-1 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
@@ -241,39 +251,18 @@ export default function Index({ accessSecret, pubnubKeys, decryptKey }: IndexPro
     )
 }
 
-async function verifyAccessToken(token: string, accessSecret: string, onlyVerify?: boolean) {
-    try {
-        // verify token
-        const encodedSecret = new TextEncoder().encode(accessSecret)
-        const verifyToken = await jwtVerify<LoginProfileType>(token, encodedSecret)
-        // only wanna verify, not get the payload
-        if(onlyVerify) return true
-        // token verified
-        const verifiedUser = {
-            id: verifyToken.payload.id,
-            display_name: verifyToken.payload.display_name,
-            is_login: verifyToken.payload.is_login,
-            description: verifyToken.payload.description
-        }
-        return verifiedUser
-    } catch (error) {
-        return null
-    }
-}
-
 type IUserStates = {
     setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
     setUsersFound: Dispatch<SetStateAction<LoginProfileType[]>>;
     setUserTimeout: Dispatch<SetStateAction<IUserTimeout[]>>;
 }
-async function getExpiredUsers(decryptKey: string, accessSecret: string, userStates: IUserStates) {
+async function getExpiredUsers(crypto: IndexProps['crypto'], accessSecret: string, userStates: IUserStates) {
     try {
         // nonce and encrypted data
-        const iv = window.localStorage.getItem('iv')
         const encryptedData = window.localStorage.getItem('loggedUsers')
         // decrypt the data
-        const decrypted = await decryptData({key: decryptKey, iv: iv, encryptedData: encryptedData})
-        const filterDecrypted = decrypted.decryptedData.match(/\[.*\]/)[0]
+        const decrypted = await decryptData({key: crypto.key, iv: crypto.iv, encryptedData: encryptedData})
+        const filterDecrypted = decrypted.match(/\[.*\]/)[0]
         // verify the token
         const expiredUsers = [] as {id: string}[]
         const usersData = JSON.parse(filterDecrypted) as ILoggedUsers[]
@@ -321,6 +310,6 @@ async function getExpiredUsers(decryptKey: string, accessSecret: string, userSta
         // return expired users
         return expiredUsers
     } catch (error) {
-        console.log(error)
+        return null
     }
 }

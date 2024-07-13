@@ -10,7 +10,11 @@ interface IQueryBuilder {
     table: string;
     selectColumn?: string | number;
     function?: string;
-    function_args?: {[key: string]: string}
+    function_args?: {[key: string]: string | number};
+    order?: {
+        col: string;
+        by: 'asc' | 'desc';
+    }
 }
 
 interface IQuerySelect extends IQueryBuilder {
@@ -48,9 +52,11 @@ interface IResponse {
     data: any[];
 }
 
-// encrypt data
-interface IEncrypted {
-    iv: string;
+// encrypt/decrypt data
+interface IEncryptDecryptProps {
+    key?: string;
+    iv?: string;
+    text: string;
     encryptedData: string;
 }
 
@@ -80,7 +86,7 @@ interface IFilterLoggedUsers {
 type LoggedUsersType = {action: 'push'; data: IPushLoggedUsers} | {action: 'filter'; data: IFilterLoggedUsers} | {action: 'getUsers'; data: IFilterLoggedUsers} | {action: 'renew'; data: IPushLoggedUsers}
 
 // payload types
-type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload
+type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload | IHistoryMessagePayload
 
 // register
 interface IRegister {
@@ -133,18 +139,22 @@ interface IProfilePayload extends IProfile {
 }
 
 // message object
-interface IMessage {
-    style: string;
-    author: string;
-    text: string;
-    time: string;
+interface IMessage extends IDirectChat {
+    messages: {
+        user: string;
+        style: string;
+        text: string;
+        time: string;
+        date: string;
+    }[]
 }
 
 // direct message
 interface IDirectChat {
-    user_from: string;
-    user_to: string;
+    user_me: string;
+    user_with: string;
     message_id?: {
+        user_id: string;
         message: string;
         created_at?: string;
         updated_at?: string;
@@ -154,6 +164,11 @@ interface IDirectChat {
 interface IDirectChatPayload extends IDirectChat {
     message: string;
     time: string;
+    date: string;
+}
+
+interface IHistoryMessagePayload extends IDirectChat {
+    amount: number;
 }
 
 export type {
@@ -165,7 +180,7 @@ export type {
     // response
     IResponse,
     // encrypt
-    IEncrypted,
+    IEncryptDecryptProps,
     // token verify
     TokenVerifyReturn,
     TokenVerifyType,
@@ -184,5 +199,6 @@ export type {
     // message object
     IMessage,
     // direct message
-    IDirectChatPayload
+    IDirectChatPayload,
+    IHistoryMessagePayload
 }

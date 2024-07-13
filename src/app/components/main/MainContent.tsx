@@ -10,7 +10,7 @@ import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
 import { LoginProfileContext } from "../../context/LoginProfileContext"
 
-export default function MainContent() {
+export default function MainContent({ crypto }) {
     // get page for display
     const [displayPage, setDisplayPage] = useState('home')
     // page click handler
@@ -55,7 +55,7 @@ export default function MainContent() {
                             ? /* show other's profile */
                             <Profile profileClassName="md:w-auto" userData={showOtherProfile[1]} />
                             : /* back button clicked on other's profile, back to user list */
-                            <UserList pageHandler={ getPageHandler } />
+                            <UserList pageHandler={ getPageHandler } crypto={crypto} />
                     }
                 </div>
                 {/* main container */}

@@ -40,7 +40,7 @@ export class Controller {
                 token: loggedUserToken
             })
             // hash the logged users 
-            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
             console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }
@@ -48,7 +48,7 @@ export class Controller {
             // pop logout user from logged users
             loggedUsers = loggedUsers.filter(u => u.id !== args.data.id)
             // hash the logged users 
-            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
             console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }
@@ -66,7 +66,7 @@ export class Controller {
             // update my token
             loggedUsers[renewUser].token = loggedUserToken
             // hash the logged users 
-            const encryptedLoggedUsers = await encryptData(JSON.stringify(loggedUsers))
+            const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
             console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }

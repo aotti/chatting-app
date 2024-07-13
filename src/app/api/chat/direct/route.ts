@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { api_action, respond } from "../../helper";
 import { ChatController } from "../ChatController";
 import { jwtVerify } from "jose";
-import { IDirectChatPayload } from "../../../types";
+import { IDirectChatPayload, IHistoryMessagePayload } from "../../../types";
 import { LoginProfileType } from "../../../context/LoginProfileContext";
 import AuthController from "../../token/AuthController";
 import { cookies } from "next/headers";
@@ -13,8 +13,15 @@ const authController = new AuthController()
 export async function GET(req: NextRequest) {
     // create api action
     const action = api_action(req.nextUrl.pathname, req.method)
+    // query param
+    const key = Array.from(req.nextUrl.searchParams.keys())[0]
+    const queryPayload = {
+        [key]: req.nextUrl.searchParams.get('data')
+    } as {data: string}
+    // send chat result
+    const result = await chatController.historyMessages(action, queryPayload)
     // return response
-    return NextResponse.json({ message: 'get chat' }, { status: 200 })
+    return NextResponse.json(result, { status: result.status })
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +35,7 @@ export async function POST(req: NextRequest) {
         // authorize token
         const accessTokenSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
         const verifyAccessToken = await jwtVerify<LoginProfileType>(token, accessTokenSecret)
-        if(verifyAccessToken.payload.id !== bodyPayload.user_from) {
+        if(verifyAccessToken.payload.id !== bodyPayload.user_me) {
             const notVerified = respond(401, 'Unauthorized', [])
             return NextResponse.json(notVerified, { status: notVerified.status })
         }
@@ -47,14 +54,14 @@ export async function POST(req: NextRequest) {
             data: []
         }, { status: 403 })
         // create new access token
-        const newAccessToken = await authController.createToken(action, refreshToken, req)
+        const newAccessToken = await authController.createToken(action, refreshToken)
         // send chat
         const altResult = await chatController.send(action, bodyPayload)
         // return response
         altResult.data[0] = {...altResult.data[0], ...newAccessToken.data[0]}
         return NextResponse.json(altResult, { status: altResult.status })
     }
-    // send chat
+    // send chat result
     const result = await chatController.send(action, bodyPayload)
     // return response
     return NextResponse.json(result, { status: result.status })

@@ -1,35 +1,41 @@
 import { Dispatch, FormEvent, SetStateAction, useContext, useEffect, useState } from "react";
 import { ChatWithContext } from "../../../context/ChatWithContext";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
-import { IMessage, IResponse } from "../../../types";
+import { IDirectChatPayload, IMessage, IResponse } from "../../../types";
 import { fetcher, qS, qSA } from "../../helper";
 import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
 
 export default function ChattingPage() {
     // chat with context
-    const { chatWith } = useContext(ChatWithContext)
+    const { chatWith, historyMessages } = useContext(ChatWithContext)
     // login profile context
     const { isLogin } = useContext(LoginProfileContext)
-    // history messages
-    const [historyMessages, setHistoryMessages] = useState(null)
     // message items
-    const [messageItems, setMessageItems] = useState<IMessage[]>(() => {
-        const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
-        return [
-            // tambah date time
-            { style: 'justify-end', author: isLogin[1].display_name, text: 'message 1', time: messageTime },
-            { style: 'justify-start', author: 'yanto', text: 'message 2', time: messageTime }
-        ]
-    })
-    /*
-    buat variable static untuk simpan tiap user yg login
-    jika user login, push ke variable
-    jika user afk lebih dari 5 menit, anggap OFFLINE
-    jika user logout, anggap OFFLINE
-    selain itu anggap ONLINE
-     */
-    // public static onlineUsers: Pick<LoginProfileType, 'id'|'display_name'>[] = []
+    // ### UBAH TYPE messageItems MENJADI
+    // ### STYLE, AUTHOR, TARGET, TEXT, DATE, TIME
+    const [messageItems, setMessageItems] = useState<IMessage[]>([])
+
+    // get history chat
+    useEffect(() => {
+        // ### LAKUKAN CEK JIKA USER SUDAH PERNAH DI AMBIL HISTORY MESSAGE NYA
+        // ### JADI TIDAK SELALU KONEKSI KE DATABASE
+        console.log({historyMessages});
+        if(historyMessages) {
+            // loop messages
+            for(let hm of historyMessages) {
+                // check my messages
+                const tempMessages: IMessage['messages'][0] = {
+                    user: isLogin[1].id === hm.user_id ? isLogin[1].display_name : chatWith.display_name,
+                    style: isLogin[1].id === hm.user_id ? 'justify-end' : 'justify-start',
+                    text: hm.message,
+                    time: new Date(hm.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
+                    date: new Date(hm.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
+                }
+                setMessageItems(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
+            }
+        }
+    }, [historyMessages])
 
     // pubnub
     const pubsub = usePubNub()
@@ -40,15 +46,24 @@ export default function ChattingPage() {
         // get published message
         const publishedMessage: ListenerParameters =  {
             message: (data) => {
-                const newMessage: IMessage = data.message
+                const newMessage: IMessage['messages'][0] = data.message
+                // user is id
                 // only get other message
-                if(newMessage.author === isLogin[1].id) return
-                // make sure the author of message
-                if(newMessage.author !== chatWith.id) return
-                // add message
-                newMessage.style = 'justify-start'
-                newMessage.author = chatWith.display_name
-                setMessageItems(oldMessages => [...oldMessages, newMessage])
+                if(newMessage.user === isLogin[1].id) return
+                // make sure chat with the current opened chat user 
+                if(newMessage.user !== chatWith.id) return
+                // change user id to display name
+                newMessage.user = chatWith.display_name
+                // messages data
+                const tempMessages: IMessage['messages'][0] = {
+                    user: newMessage.user,
+                    style: newMessage.style,
+                    text: newMessage.text,
+                    time: newMessage.time,
+                    date: newMessage.date
+                }
+                // add message from other
+                setMessageItems(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
             }
         }
         pubsub.addListener(publishedMessage)
@@ -59,7 +74,7 @@ export default function ChattingPage() {
         }
     }, [])
 
-    // message items
+    // message items scroll
     useEffect(() => {
         // scroll to bottom
         const messageContainer = qS('#messageContainer')
@@ -80,7 +95,11 @@ export default function ChattingPage() {
             </div>
             {/* chat box */}
             <div className="flex items-end row-span-6 border-b border-t">
-                <Messages messageItems={messageItems} />
+                { 
+                    messageItems.length > 0 && historyMessages
+                        ? <Messages messageItems={messageItems} chatWith={chatWith} />
+                        : <div id="messageContainer" className="w-full max-h-full p-3 my-auto text-2xl"> Loading... </div>
+                }
             </div>
             {/* send message box */}
             <div className="flex items-center border-t border-black">
@@ -95,27 +114,32 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ messageItems }: { messageItems: IMessage[] }) {
+function Messages({ messageItems, chatWith }: {messageItems: IMessage[]; chatWith: LoginProfileType}) {
+    const messageItemsFilter = messageItems.length === 0 ? null : messageItems.filter(v => v.user_with === chatWith.id)
+    const messageItemsData = messageItemsFilter[0] ? messageItemsFilter[0] : null
+    console.log({messageItemsData});
+    
     return (
         // message container
         <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
             {
                 // message items
-                messageItems.map((v, i) => {
-                    return <MessageItem msgItem={v} key={i}/>
+                // match target id with chatwith id
+                !messageItemsData ? null : messageItemsData.messages.map((m, i) => {
+                    return <MessageItem msgItem={m} key={i} />
                 })
             }
         </div>
     )
 }
 
-function MessageItem({msgItem}: {msgItem: IMessage}) {
+function MessageItem({msgItem}: {msgItem: IMessage['messages'][0]}) {
     return (
         <div className={`flex ${msgItem.style}`}>
             <div className="border rounded-md min-w-32 p-1 my-2 bg-orange-400 dark:bg-sky-700">
                 {/* author & status*/}
                 <p className="text-xs flex justify-between"> 
-                    <span> {msgItem.author} </span>
+                    <span> {msgItem.user} </span>
                     <span id="messageStatus" className="brightness-150"> {msgItem.style.includes('start') ? '✔' : '🕗'} </span>
                 </p>
                 {/* message */}
@@ -136,25 +160,25 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
     const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
-    const formData = {
-        user_from: userFrom.id,
-        user_to: userTo.id,
+    const formData: IDirectChatPayload = {
+        // author is user_id
+        user_me: userFrom.id,
+        user_with: userTo.id,
         message: JSON.stringify(formInputs[0].value),
-        time: messageTime
+        time: messageTime,
+        date: ''
     }
     // check message empty
     if(formData.message == '') return
     // append new message
-    setMessageItems(oldMessages => [
-        ...oldMessages, 
-        { 
-            // my new message
-            style: 'justify-end', 
-            author: userFrom.display_name, 
-            text: JSON.parse(formData.message),
-            time: messageTime
-        }
-    ])
+    const tempMessages: IMessage['messages'][0] = {
+        user: userFrom.display_name,
+        style: 'justify-end',
+        text: formInputs[0].value,
+        time: messageTime,
+        date: ''
+    }
+    setMessageItems(data => addMessageItem(data, userFrom, userTo, tempMessages))
     // empty message input
     const messageBox = qS('#messageBox') as HTMLInputElement
     messageBox.value = ''
@@ -189,5 +213,28 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
             break
         default: 
             messageStatus[messageStatus.length-1].textContent = '⚠'
+    }
+}
+
+function addMessageItem(data: IMessage[], userMe: LoginProfileType, userWith: LoginProfileType, tempMessages: IMessage['messages'][0]) {
+    // temp message items data
+    const tempData = data
+    const isTargetExist = tempData.map(v => v.user_with).indexOf(userWith.id)
+    // havent chat with this user yet
+    if(isTargetExist === -1) {
+        // push target data 
+        tempData.push({
+            user_me: userMe.id, 
+            user_with: userWith.id, // ### YAKIN AUTHOR chatWith.id ???
+            messages: [tempMessages]
+        })
+        // return data
+        return tempData
+    }
+    // have chatted with this user
+    else {
+        tempData[isTargetExist].messages.push(tempMessages)
+        // return data
+        return tempData
     }
 }

@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv } from "crypto";
-import { IEncrypted, IResponse } from "../types";
+import { IEncryptDecryptProps, IResponse } from "../types";
 
 export function respond(s: number, m: string | object, d: any[]): IResponse {
     return {
@@ -27,28 +27,47 @@ export function api_action(pathname: string, method: string) {
     return `${altMethod} ${action}`
 }
 
-export async function encryptData(data: string): Promise<IEncrypted> {
+/**
+ * @param data required data to encrypt the text
+ * - TEXT is required
+ * - KEY is optional (except on client-side)
+ * - IV is optional (except on client-side)
+ * @returns encrypted data
+ */
+export async function encryptData(data: Omit<IEncryptDecryptProps, 'encryptedData'>) {
     // stuff for encrypt
-    const key = Buffer.from(process.env.CIPHER_KEY, 'hex')
-    const iv = Buffer.from(process.env.CIPHER_IV, 'hex')
+    const getKey = process.env.CIPHER_KEY || data.key
+    const getIV = process.env.CIPHER_IV || data.iv
+    const key = Buffer.from(getKey, 'hex')
+    const iv = Buffer.from(getIV, 'hex')
     const cipher = createCipheriv('aes-256-cbc', key, iv)
     // encrypt data
-    let encrypted = cipher.update(data)
+    let encrypted = cipher.update(data.text)
     encrypted = Buffer.concat([encrypted, cipher.final()])
     // return encrypted
-    return { iv: iv.toString('hex'), encryptedData: encrypted.toString('base64') }
+    return encrypted.toString('base64')
 }
 
-export async function decryptData(data: Record<'key'|'iv'|'encryptedData', string>) {
+/**
+ * @param data required data to decrypt the encrypted text
+ * - TEXT is required
+ * - KEY is optional (except on client-side)
+ * - IV is optional (except on client-side)
+ * @returns decrypted data
+ */
+export async function decryptData(data: Omit<IEncryptDecryptProps, 'text'>) {
     // stuff for decrypt
-    const key = Buffer.from(data.key, 'hex')
-    const iv = Buffer.from(data.iv, 'hex')
+    const getKey = process.env.CIPHER_KEY || data.key
+    const getIV = process.env.CIPHER_IV || data.iv
+    const key = Buffer.from(getKey, 'hex')
+    const iv = Buffer.from(getIV, 'hex')
     const encryptedData = Buffer.from(data.encryptedData, 'base64')
     const decipher = createDecipheriv('aes-256-cbc', key, iv)
+    // to prevent error on final()
     decipher.setAutoPadding(false)
     // decrypt data
     let decrypted = decipher.update(encryptedData).toString()
     decrypted += decipher.final()
     // return decrypted
-    return { decryptedData: decrypted.toString() }
+    return decrypted.toString()
 }

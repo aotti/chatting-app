@@ -1,12 +1,11 @@
 import { jwtVerify, SignJWT } from "jose"
-import { NextRequest } from "next/server"
 import { IResponse, TokenVerifyReturn, TokenVerifyType } from "../../types"
 import { respond } from "../helper"
 import { LoginProfileType } from "../../context/LoginProfileContext"
 
 export default class AuthController {
     
-    async createToken(action: string, refreshToken: string, req: NextRequest) {
+    async createToken(action: string, refreshToken: string) {
         let result: IResponse 
 
         try {
@@ -27,7 +26,7 @@ export default class AuthController {
     static verifyAccessToken<T extends TokenVerifyType>(args: T): Promise<TokenVerifyReturn<T>>
     // static verifyAccessToken(args: ITokenVerifyOnly): Promise<boolean>
     // static verifyAccessToken(args: ITokenVerifyPayload): Promise<LoginProfileType>
-    static async verifyAccessToken(args) {
+    static async verifyAccessToken(args: TokenVerifyType) {
         try {
             // verify the token
             const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)

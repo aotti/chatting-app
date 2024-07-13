@@ -1,4 +1,4 @@
-import { IDirectChatPayload, ILoginPayload, IProfilePayload, IRegisterPayload, IResponse, PayloadTypes } from "../types";
+import { IDirectChatPayload, IHistoryMessagePayload, ILoginPayload, IProfilePayload, IRegisterPayload, IResponse, PayloadTypes } from "../types";
 import { respond } from "./helper";
 
 export default function filter(action: string, payload: PayloadTypes) {
@@ -36,9 +36,15 @@ export default function filter(action: string, payload: PayloadTypes) {
             // found error
             if(!filterStatus) filterResult = respond(400, filterMessage, [])
             break
-        case action.includes('chat direct'): 
+        case action.includes('insert chat direct'): 
             // filtering
             [filterStatus, filterMessage] = directChat(payload as IDirectChatPayload)
+            // found error
+            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            break
+        case action.includes('get chat direct'): 
+            // filtering
+            [filterStatus, filterMessage] = historyMessages(payload as IHistoryMessagePayload)
             // found error
             if(!filterStatus) filterResult = respond(400, filterMessage, [])
             break
@@ -47,7 +53,7 @@ export default function filter(action: string, payload: PayloadTypes) {
     return filterResult
 }
 
-function getUser(payload: IProfilePayload): [boolean, string] {
+function getUser(payload: IProfilePayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /display_name/g
@@ -71,7 +77,7 @@ function getUser(payload: IProfilePayload): [boolean, string] {
     return resultValue
 }
 
-function register(payload: Omit<IRegisterPayload, 'confirm_password'>): [boolean, string] {
+function register(payload: Omit<IRegisterPayload, 'confirm_password'>) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /is_login|display_name|username|password/g
@@ -101,7 +107,7 @@ function register(payload: Omit<IRegisterPayload, 'confirm_password'>): [boolean
     return resultValue
 }
 
-function login(payload: ILoginPayload): [boolean, string] {
+function login(payload: ILoginPayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /username|password/g
@@ -151,7 +157,7 @@ function logout(payload: ILoginPayload) {
     return resultValue
 }
 
-function directChat(payload: IDirectChatPayload): [boolean, string] {
+function directChat(payload: IDirectChatPayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /user_from|user_to|message/g
@@ -171,6 +177,34 @@ function directChat(payload: IDirectChatPayload): [boolean, string] {
                 resultValue = valueCheck(key, value, 'string', 5); break
             case 'message':
                 resultValue = valueCheck(key, value, 'string', 1); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function historyMessages(payload: IHistoryMessagePayload) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /user_me|user_with|amount/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 3)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'user_me':
+                resultValue = valueCheck(key, value, 'string', 5); break
+            case 'user_with':
+                resultValue = valueCheck(key, value, 'string', 5); break
+            case 'amount':
+                resultValue = valueCheck(key, value, 'number'); break
         }
         // error found
         if(!resultValue[0]) return resultValue

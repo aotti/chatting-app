@@ -6,6 +6,19 @@ export class DatabaseQueries {
     private prefix = 'chat_app_'
 
     async db_func<T>(queryObject: IQuerySelect | IQueryInsert | IQueryUpdate) {
+        // order columns
+        if(queryObject.order) {
+            const { col, by } = queryObject.order
+            const orderBy = by === 'asc' ? true : false
+            // run function
+            const {data, error} = queryObject.function_args
+                                    // function with parameter
+                                    ? await this.sb.rpc(queryObject.function, queryObject.function_args).order(col, {ascending: orderBy})
+                                    // function without parameter
+                                    : await this.sb.rpc(queryObject.function).order(col, {ascending: orderBy})
+            return {data: data as T[], error: error}
+        }
+        // not order columns
         // run function
         const {data, error} = queryObject.function_args
                                 // function with parameter
@@ -97,7 +110,7 @@ export class DatabaseQueries {
      * - users - id | is_login❌| username | password | display_name | created_at | updated_at | deleted_at
      * - profiles - id | user_id (id, username, display_name) | description | created_at | updated_at | deleted_at
      * - messages - 
-     * - direct_chats - 
+     * - direct_chats - id | user_from | user_to | message_id (user_id, message, created_at, updated_at)
      * - group_chats - 
      * - group_chat_users - 
      * - group_chat_messages - 
@@ -121,7 +134,8 @@ export class DatabaseQueries {
         }
         // for direct_chats table
         else if(type === 'direct_chats') {
-            // null
+            const pickerList: string[] = ['id', 'user_from', 'user_to', 'message_id(user_id, message, created_at, updated_at)']
+            selectedColumns.push(columnPicker(pickerList))
         }
         // for group_chats table
         else if(type === 'group_chats') {

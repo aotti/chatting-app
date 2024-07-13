@@ -1,5 +1,5 @@
 import { respond } from "../helper"
-import { IEncrypted, ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
+import { ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
 import filter from "../filter"
 import { cookies } from "next/headers"
 import { NextRequest } from "next/server"
@@ -126,7 +126,7 @@ export default class UserController extends Controller {
             else if(updateResponse.error === null) {
                 // login case - get profile
                 if(req) {
-                    const pushLoggedUsers: IEncrypted = await this.alterLoggedUsers({
+                    const pushLoggedUsers: string = await this.alterLoggedUsers({
                         action: 'push', 
                         data: {
                             id: updateResponse.data[0].id,
@@ -229,7 +229,7 @@ export default class UserController extends Controller {
                             })
                         }
                         // update my token (online/offline)
-                        const updatedToken: IEncrypted = await this.alterLoggedUsers({action: 'renew', data: {id: verifiedUser.id, display_name: verifiedUser.display_name}})
+                        const updatedToken: string = await this.alterLoggedUsers({action: 'renew', data: {id: verifiedUser.id, display_name: verifiedUser.display_name}})
                         console.log(updatedToken 
                             ? `my token updated ${verifiedUser.display_name}` 
                             : `update token failed ${verifiedUser.display_name}`
@@ -298,7 +298,7 @@ export default class UserController extends Controller {
             }
             // success
             else if(selectResponse.error === null) {
-                const filterLoggedUsers: IEncrypted = await this.alterLoggedUsers({ action: 'filter', data: {id: payload.id} })
+                const filterLoggedUsers: string = await this.alterLoggedUsers({ action: 'filter', data: {id: payload.id} })
                 // publish logged users data to client
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token
