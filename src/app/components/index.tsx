@@ -81,7 +81,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     // chat with context
     const [chatWith, setChatWith] = useState<LoginProfileType>(null)
     // message items
-    const [messageItems, setMessageItems] = useState<IMessage[]>(null)
+    const [messageItems, setMessageItems] = useState<IMessage['messages']>(null)
     // history message log
     const [historyMessageLog, setHistoryMessageLog] = useState<IMessage[]>([])
     // chat with states

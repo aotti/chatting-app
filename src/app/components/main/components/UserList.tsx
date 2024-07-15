@@ -68,15 +68,15 @@ function startChat(isLogin, setChatWith, user, pageHandler) {
     pageHandler(isLogin[0] ? 'chatting' : 'login')
 }
 
-type MessageType = Dispatch<SetStateAction<IMessage[]>>
-async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: IUserList['crypto'], setMessageItems: MessageType, historyMessageLog: IMessage[], setHistoryMessageLog: MessageType) {
+type MessageType<T> = Dispatch<SetStateAction<T>>
+async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: IUserList['crypto'], setMessageItems: MessageType<IMessage['messages']>, historyMessageLog: IMessage[], setHistoryMessageLog: MessageType<IMessage[]>) {
     // set message items to NULL each time open Direct Message
     setMessageItems(null)
-    // check new history message
+    // check new history message to prevent fetching too much to database
     if(historyMessageLog.length > 0) {
         const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(userWith.id)
         if(checkUserHistory !== -1) {
-            return setMessageItems([historyMessageLog[checkUserHistory]])
+            return setMessageItems(historyMessageLog[checkUserHistory].messages)
         }
     }
     // fetch stuff
@@ -108,7 +108,7 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
                     created_at: hrd.created_at
                     // ### updated_at later
                 }
-                setMessageItems(data => addMessageItem(data, userMe, userWith, tempMessages))
+                setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
                 // push to new history message
                 setHistoryMessageLog(data => addMessageItem(data, userMe, userWith, tempMessages))
             }

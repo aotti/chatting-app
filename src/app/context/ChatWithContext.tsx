@@ -5,8 +5,8 @@ import { IMessage } from "../types";
 interface IChatWith {
     chatWith: LoginProfileType;
     setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
-    messageItems: IMessage[];
-    setMessageItems: Dispatch<SetStateAction<IMessage[]>>;
+    messageItems: IMessage['messages'];
+    setMessageItems: Dispatch<SetStateAction<IMessage['messages']>>;
     historyMessageLog: IMessage[];
     setHistoryMessageLog: Dispatch<SetStateAction<IMessage[]>>;
 }

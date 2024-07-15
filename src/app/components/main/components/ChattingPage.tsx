@@ -48,7 +48,7 @@ export default function ChattingPage() {
                     created_at: newMessage.created_at
                 }
                 // add message from other
-                setMessageItems(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
+                setMessageItems(data => [...data, tempMessages])
             }
         }
         pubsub.addListener(publishedMessage)
@@ -92,25 +92,16 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ historyMessages, chatWith }: {historyMessages: IMessage[]; chatWith: LoginProfileType}) {
-    const messageItemsFilter = historyMessages.length === 0 
-                            ? null 
-                            : historyMessages.filter(v => v.user_with === chatWith.id)
-    const messageItemsData = !messageItemsFilter ? null : messageItemsFilter[0]
+function Messages({ historyMessages, chatWith }: {historyMessages: IMessage['messages']; chatWith: LoginProfileType}) {
     // filter messages
-    if(messageItemsData) {
-        const tempMessageItemsData = []
-        new Map(messageItemsData.messages.map(v => [v['created_at'], v])).forEach(v => tempMessageItemsData.push(v))
-        // re-initialize messages
-        messageItemsData.messages = tempMessageItemsData
-    }
+    const _filteredMessages = []
+    new Map(historyMessages.map(v => [v['created_at'], v])).forEach(v => _filteredMessages.push(v))
     return (
         // message container
         <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
             {
                 // message items
-                // match target id with chatwith id
-                !messageItemsData ? null : messageItemsData.messages.map((m, i) => {
+                !_filteredMessages ? null : _filteredMessages.map((m, i) => {
                     return <MessageItem msgItem={m} key={i} />
                 })
             }
@@ -136,8 +127,8 @@ function MessageItem({msgItem}: {msgItem: IMessage['messages'][0]}) {
     )
 }
 
-type MessageType = Dispatch<SetStateAction<IMessage[]>>
-async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileType, userTo: LoginProfileType, setMessageItems: MessageType, setHistoryMessageLog: MessageType) {
+type MessageType<T> = Dispatch<SetStateAction<T>>
+async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileType, userTo: LoginProfileType, setMessageItems: MessageType<IMessage['messages']>, setHistoryMessageLog: MessageType<IMessage[]>) {
     ev.preventDefault()
     // access token
     const token = window.localStorage.getItem('accessToken')
@@ -166,7 +157,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileTy
         date: '',
         created_at: new Date().toISOString()
     }
-    setMessageItems(data => addMessageItem(data, userFrom, userTo, tempMessages))
+    setMessageItems(data => [...data, tempMessages])
     // add message to history log
     setHistoryMessageLog(data => addMessageItem(data, userFrom, userTo, tempMessages))
     // empty message input
