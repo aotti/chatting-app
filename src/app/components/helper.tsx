@@ -2,6 +2,7 @@ import { ChangeEvent } from "react"
 import { createHash } from "crypto"
 import { LoginProfileType } from "../context/LoginProfileContext"
 import { jwtVerify } from "jose"
+import { IMessage } from "../types"
 
 /**
  * @param value html tag / id / class
@@ -58,5 +59,28 @@ export async function verifyAccessToken(token: string, accessSecret: string, onl
         return verifiedUser
     } catch (error) {
         return null
+    }
+}
+
+export function addMessageItem(data: IMessage[], userMe: LoginProfileType, userWith: LoginProfileType, tempMessages: IMessage['messages'][0]) {
+    // temp message items data
+    const tempData = data ? data : []
+    const isTargetExist = tempData.map(v => v.user_with).indexOf(userWith.id)
+    // havent chat with this user yet
+    if(isTargetExist === -1) {
+        // push target data 
+        tempData.push({
+            user_me: userMe.id, 
+            user_with: userWith.id, 
+            messages: [tempMessages]
+        })
+        // return data
+        return tempData
+    }
+    // have chatted with this user
+    else {
+        tempData[isTargetExist].messages.push(tempMessages)
+        // return data
+        return tempData
     }
 }

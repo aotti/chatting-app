@@ -1,17 +1,21 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 import { LoginProfileType } from "./LoginProfileContext";
-import { IHistoryMessagePayload } from "../types";
+import { IMessage } from "../types";
 
 interface IChatWith {
     chatWith: LoginProfileType;
     setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
-    historyMessages: IHistoryMessagePayload['message_id'][];
-    setHistoryMessages: Dispatch<SetStateAction<IHistoryMessagePayload['message_id'][]>>;
+    messageItems: IMessage[];
+    setMessageItems: Dispatch<SetStateAction<IMessage[]>>;
+    historyMessageLog: IMessage[];
+    setHistoryMessageLog: Dispatch<SetStateAction<IMessage[]>>;
 }
 
 export const ChatWithContext = createContext<IChatWith>({
     chatWith: null,
     setChatWith: () => null,
-    historyMessages: null,
-    setHistoryMessages: () => null
+    messageItems: null,
+    setMessageItems: () => null,
+    historyMessageLog: null,
+    setHistoryMessageLog: () => null
 })

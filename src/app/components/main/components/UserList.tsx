@@ -1,10 +1,10 @@
-import { useContext, useState } from "react"
+import { Dispatch, SetStateAction, useContext, useState } from "react"
 import { UsersFoundContext } from "../../../context/UsersFoundContext"
-import { LoginProfileContext } from "../../../context/LoginProfileContext"
+import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
 import { ChatWithContext } from "../../../context/ChatWithContext"
-import { IHistoryMessagePayload, IResponse } from "../../../types"
+import { IHistoryMessagePayload, IMessage, IResponse } from "../../../types"
 import { encryptData } from "../../../api/helper"
-import { fetcher } from "../../helper"
+import { addMessageItem, fetcher } from "../../helper"
 
 interface IUserList {
     pageHandler: (page: string) => void;
@@ -14,14 +14,11 @@ interface IUserList {
     };
 }
 
-// history message log
-const historyMessageLog = []
-
 export default function UserList({pageHandler, crypto}: IUserList) {
     // login profile context
     const { isLogin, setShowOtherProfile } = useContext(LoginProfileContext)
     // chat with context
-    const { setChatWith, setHistoryMessages } = useContext(ChatWithContext)
+    const { setChatWith, setMessageItems, historyMessageLog, setHistoryMessageLog } = useContext(ChatWithContext)
     // users found context
     const { usersFound } = useContext(UsersFoundContext)
 
@@ -51,10 +48,7 @@ export default function UserList({pageHandler, crypto}: IUserList) {
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
                                         startChat(isLogin, setChatWith, user, pageHandler);
-                                        if(historyMessageLog.indexOf(user.id) === -1) {
-                                            await historyChat(isLogin[1].id, user.id, crypto, setHistoryMessages);
-                                            historyMessageLog.push(user.id)
-                                        }
+                                        await historyChat(isLogin[1], user, crypto, setMessageItems, historyMessageLog, setHistoryMessageLog);
                                     }}>
                                     <img src="./img/send.png" alt="chat" width={30} />
                                 </button>
@@ -74,11 +68,21 @@ function startChat(isLogin, setChatWith, user, pageHandler) {
     pageHandler(isLogin[0] ? 'chatting' : 'login')
 }
 
-async function historyChat(userMe: string, userWith: string, crypto: IUserList['crypto'], setHistoryMessages) {
+type MessageType = Dispatch<SetStateAction<IMessage[]>>
+async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: IUserList['crypto'], setMessageItems: MessageType, historyMessageLog: IMessage[], setHistoryMessageLog: MessageType) {
+    // set message items to NULL each time open Direct Message
+    setMessageItems(null)
+    // check new history message
+    if(historyMessageLog.length > 0) {
+        const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(userWith.id)
+        if(checkUserHistory !== -1) {
+            return setMessageItems([historyMessageLog[checkUserHistory]])
+        }
+    }
     // fetch stuff
     const historyPayload: IHistoryMessagePayload = {
-        user_me: userMe,
-        user_with: userWith,
+        user_me: userMe.id,
+        user_with: userWith.id,
         amount: 100
     }
     const encryptedHistoryPayload = await encryptData({text: JSON.stringify(historyPayload), key: crypto.key, iv: crypto.iv})
@@ -88,17 +92,26 @@ async function historyChat(userMe: string, userWith: string, crypto: IUserList['
     // response
     switch(historyResponse.status) {
         case 200: 
-            setHistoryMessages((data: IHistoryMessagePayload[]) => {
-                if(data) {
-                    const oldData = [...data, ...historyResponse.data]
-                    const newData = []
-                    // filter data by created_at
-                    new Map(oldData.map(v => [v['created_at'], v])).forEach(v => newData.push(v))
-                    // return new data
-                    return newData
+            // ### TAMPILKAN HISTORY MESSAGE LANGSUNG
+            // ### KE MESSAGE COMPONENT DARIPADA 
+            // ### DIKIRIM KE MESSAGE ITEMS DULU 
+            const hisResData = historyResponse.data as IHistoryMessagePayload['message_id'][]
+            // ### BUAT LOOP hisResData LALU PAKAI FUNCTION addMessageItem
+            for(let hrd of hisResData) {
+                // create message object
+                const tempMessages: IMessage['messages'][0] = {
+                    user: userMe.id === hrd.user_id ? userMe.display_name : userWith.display_name,
+                    style: userMe.id === hrd.user_id ? 'justify-end' : 'justify-start',
+                    text: hrd.message,
+                    time: new Date(hrd.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
+                    date: new Date(hrd.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'}),
+                    created_at: hrd.created_at
+                    // ### updated_at later
                 }
-                else return historyResponse.data
-            })
+                setMessageItems(data => addMessageItem(data, userMe, userWith, tempMessages))
+                // push to new history message
+                setHistoryMessageLog(data => addMessageItem(data, userMe, userWith, tempMessages))
+            }
             console.log(historyResponse.data);
             
             break

@@ -5,7 +5,7 @@ import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
 import { fetcher, verifyAccessToken } from "./helper"
-import { IHistoryMessagePayload, ILoggedUsers, IResponse } from "../types"
+import { IHistoryMessagePayload, ILoggedUsers, IMessage, IResponse } from "../types"
 import { DarkModeContext } from "../context/DarkModeContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
@@ -80,14 +80,18 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
 
     // chat with context
     const [chatWith, setChatWith] = useState<LoginProfileType>(null)
-    // history messages
-    const [historyMessages, setHistoryMessages] = useState<IHistoryMessagePayload['message_id'][]>(null)
+    // message items
+    const [messageItems, setMessageItems] = useState<IMessage[]>(null)
+    // history message log
+    const [historyMessageLog, setHistoryMessageLog] = useState<IMessage[]>([])
     // chat with states
     const chatWithStates = {
         chatWith: chatWith,
         setChatWith: setChatWith,
-        historyMessages: historyMessages,
-        setHistoryMessages: setHistoryMessages
+        messageItems: messageItems,
+        setMessageItems: setMessageItems,
+        historyMessageLog: historyMessageLog,
+        setHistoryMessageLog: setHistoryMessageLog
     }
 
     const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])

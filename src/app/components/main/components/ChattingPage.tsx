@@ -2,40 +2,24 @@ import { Dispatch, FormEvent, SetStateAction, useContext, useEffect, useState } 
 import { ChatWithContext } from "../../../context/ChatWithContext";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
 import { IDirectChatPayload, IMessage, IResponse } from "../../../types";
-import { fetcher, qS, qSA } from "../../helper";
+import { addMessageItem, fetcher, qS, qSA } from "../../helper";
 import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
 
 export default function ChattingPage() {
     // chat with context
-    const { chatWith, historyMessages } = useContext(ChatWithContext)
+    const { chatWith, messageItems, setMessageItems, setHistoryMessageLog } = useContext(ChatWithContext)
     // login profile context
     const { isLogin } = useContext(LoginProfileContext)
-    // message items
-    // ### UBAH TYPE messageItems MENJADI
-    // ### STYLE, AUTHOR, TARGET, TEXT, DATE, TIME
-    const [messageItems, setMessageItems] = useState<IMessage[]>([])
 
-    // get history chat
+    // message items scroll
     useEffect(() => {
-        // ### LAKUKAN CEK JIKA USER SUDAH PERNAH DI AMBIL HISTORY MESSAGE NYA
-        // ### JADI TIDAK SELALU KONEKSI KE DATABASE
-        console.log({historyMessages});
-        if(historyMessages) {
-            // loop messages
-            for(let hm of historyMessages) {
-                // check my messages
-                const tempMessages: IMessage['messages'][0] = {
-                    user: isLogin[1].id === hm.user_id ? isLogin[1].display_name : chatWith.display_name,
-                    style: isLogin[1].id === hm.user_id ? 'justify-end' : 'justify-start',
-                    text: hm.message,
-                    time: new Date(hm.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
-                    date: new Date(hm.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
-                }
-                setMessageItems(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
-            }
-        }
-    }, [historyMessages])
+        console.log({messageItems});
+        
+        // scroll to bottom
+        const messageContainer = qS('#messageContainer')
+        messageContainer.scrollTo({top: messageContainer.scrollHeight})
+    }, [messageItems])
 
     // pubnub
     const pubsub = usePubNub()
@@ -60,7 +44,8 @@ export default function ChattingPage() {
                     style: newMessage.style,
                     text: newMessage.text,
                     time: newMessage.time,
-                    date: newMessage.date
+                    date: newMessage.date,
+                    created_at: newMessage.created_at
                 }
                 // add message from other
                 setMessageItems(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
@@ -73,13 +58,6 @@ export default function ChattingPage() {
             pubsub.removeListener(publishedMessage)
         }
     }, [])
-
-    // message items scroll
-    useEffect(() => {
-        // scroll to bottom
-        const messageContainer = qS('#messageContainer')
-        messageContainer.scrollTo({top: messageContainer.scrollHeight})
-    }, [messageItems])
 
     return (
         <div className="grid grid-rows-8 h-full p-2">
@@ -95,15 +73,15 @@ export default function ChattingPage() {
             </div>
             {/* chat box */}
             <div className="flex items-end row-span-6 border-b border-t">
-                { 
-                    messageItems.length > 0 && historyMessages
-                        ? <Messages messageItems={messageItems} chatWith={chatWith} />
+                {
+                    messageItems
+                        ? <Messages historyMessages={messageItems} chatWith={chatWith} />
                         : <div id="messageContainer" className="w-full max-h-full p-3 my-auto text-2xl"> Loading... </div>
                 }
             </div>
             {/* send message box */}
             <div className="flex items-center border-t border-black">
-                <form className="flex justify-around w-full" onSubmit={(event) => sendChat(event, setMessageItems, isLogin[1], chatWith)}>
+                <form className="flex justify-around w-full" onSubmit={(event) => sendChat(event, isLogin[1], chatWith, setMessageItems, setHistoryMessageLog)}>
                     <input type="text" className="text-xl p-1 w-4/5 rounded-md dark:text-black" id="messageBox" />
                     <button type="submit" className="inline-block bg-orange-400 dark:bg-orange-600 py-1 px-2 w-24 rounded-md"> 
                         Send 
@@ -114,11 +92,18 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ messageItems, chatWith }: {messageItems: IMessage[]; chatWith: LoginProfileType}) {
-    const messageItemsFilter = messageItems.length === 0 ? null : messageItems.filter(v => v.user_with === chatWith.id)
-    const messageItemsData = messageItemsFilter[0] ? messageItemsFilter[0] : null
-    console.log({messageItemsData});
-    
+function Messages({ historyMessages, chatWith }: {historyMessages: IMessage[]; chatWith: LoginProfileType}) {
+    const messageItemsFilter = historyMessages.length === 0 
+                            ? null 
+                            : historyMessages.filter(v => v.user_with === chatWith.id)
+    const messageItemsData = !messageItemsFilter ? null : messageItemsFilter[0]
+    // filter messages
+    if(messageItemsData) {
+        const tempMessageItemsData = []
+        new Map(messageItemsData.messages.map(v => [v['created_at'], v])).forEach(v => tempMessageItemsData.push(v))
+        // re-initialize messages
+        messageItemsData.messages = tempMessageItemsData
+    }
     return (
         // message container
         <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
@@ -145,13 +130,14 @@ function MessageItem({msgItem}: {msgItem: IMessage['messages'][0]}) {
                 {/* message */}
                 <p className="text-left"> {msgItem.text} </p>
                 {/* time */}
-                <p className="text-right text-xs border-t"> {msgItem.time} </p>
+                <p className="text-right text-xs border-t"> {`${msgItem.date} - ${msgItem.time}`} </p>
             </div>
         </div>
     )
 }
 
-async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatch<SetStateAction<IMessage[]>>, userFrom: LoginProfileType, userTo: LoginProfileType) {
+type MessageType = Dispatch<SetStateAction<IMessage[]>>
+async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileType, userTo: LoginProfileType, setMessageItems: MessageType, setHistoryMessageLog: MessageType) {
     ev.preventDefault()
     // access token
     const token = window.localStorage.getItem('accessToken')
@@ -166,7 +152,8 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
         user_with: userTo.id,
         message: JSON.stringify(formInputs[0].value),
         time: messageTime,
-        date: ''
+        date: '',
+        created_at: new Date().toISOString()
     }
     // check message empty
     if(formData.message == '') return
@@ -176,9 +163,12 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
         style: 'justify-end',
         text: formInputs[0].value,
         time: messageTime,
-        date: ''
+        date: '',
+        created_at: new Date().toISOString()
     }
     setMessageItems(data => addMessageItem(data, userFrom, userTo, tempMessages))
+    // add message to history log
+    setHistoryMessageLog(data => addMessageItem(data, userFrom, userTo, tempMessages))
     // empty message input
     const messageBox = qS('#messageBox') as HTMLInputElement
     messageBox.value = ''
@@ -213,28 +203,5 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, setMessageItems: Dispatc
             break
         default: 
             messageStatus[messageStatus.length-1].textContent = '⚠'
-    }
-}
-
-function addMessageItem(data: IMessage[], userMe: LoginProfileType, userWith: LoginProfileType, tempMessages: IMessage['messages'][0]) {
-    // temp message items data
-    const tempData = data
-    const isTargetExist = tempData.map(v => v.user_with).indexOf(userWith.id)
-    // havent chat with this user yet
-    if(isTargetExist === -1) {
-        // push target data 
-        tempData.push({
-            user_me: userMe.id, 
-            user_with: userWith.id, // ### YAKIN AUTHOR chatWith.id ???
-            messages: [tempMessages]
-        })
-        // return data
-        return tempData
-    }
-    // have chatted with this user
-    else {
-        tempData[isTargetExist].messages.push(tempMessages)
-        // return data
-        return tempData
     }
 }

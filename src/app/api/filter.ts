@@ -160,7 +160,7 @@ function logout(payload: ILoginPayload) {
 function directChat(payload: IDirectChatPayload) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /user_from|user_to|message/g
+    const regexKeys = /user_me|user_with|message/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 3)
     if(!resultKey[0]) return resultKey
@@ -171,9 +171,9 @@ function directChat(payload: IDirectChatPayload) {
         const value = payload[key]
         // filter payload value
         switch(key) {
-            case 'user_from':
+            case 'user_me':
                 resultValue = valueCheck(key, value, 'string', 5); break
-            case 'user_to':
+            case 'user_with':
                 resultValue = valueCheck(key, value, 'string', 5); break
             case 'message':
                 resultValue = valueCheck(key, value, 'string', 1); break

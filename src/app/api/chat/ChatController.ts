@@ -82,7 +82,8 @@ export class ChatController extends Controller {
                     user: payload.user_me,
                     text: JSON.parse(payload.message),
                     time: payload.time,
-                    date: ''
+                    date: '',
+                    created_at: payload.created_at
                 }
                 // pubnub 
                 const dmChannel = `DirectChat-${payload.user_with}`

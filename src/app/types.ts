@@ -146,6 +146,7 @@ interface IMessage extends IDirectChat {
         text: string;
         time: string;
         date: string;
+        created_at: string;
     }[]
 }
 
@@ -165,6 +166,7 @@ interface IDirectChatPayload extends IDirectChat {
     message: string;
     time: string;
     date: string;
+    created_at: string;
 }
 
 interface IHistoryMessagePayload extends IDirectChat {
