@@ -1,7 +1,13 @@
+"use server"
+
 import { createCipheriv, createDecipheriv } from "crypto";
 import { IEncryptDecryptProps, IResponse } from "../types";
+import { jwtVerify } from "jose";
+import { LoginProfileType } from "../context/LoginProfileContext";
+import { cookies } from "next/headers";
+import AuthController from "./token/AuthController";
 
-export function respond(s: number, m: string | object, d: any[]): IResponse {
+export async function respond(s: number, m: string | object, d: any[]): Promise<IResponse> {
     return {
         status: s,
         message: m,
@@ -9,7 +15,7 @@ export function respond(s: number, m: string | object, d: any[]): IResponse {
     }
 }
 
-export function api_action(pathname: string, method: string) {
+export async function api_action(pathname: string, method: string) {
     // split /api from pathname, ex: /api/user > /user
     const splitPathname = pathname.match(/(?<=.api.).*/)[0]
     // replace slash with whitespace
@@ -25,6 +31,27 @@ export function api_action(pathname: string, method: string) {
             altMethod = 'update'; break
     }
     return `${altMethod} ${action}`
+}
+
+export async function verifyUserTokens(accessToken: string, action: string) {
+    const authController = new AuthController()
+    try {
+        // authorize token
+        const accessTokenSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
+        const verifyAccessToken = await jwtVerify<LoginProfileType>(accessToken, accessTokenSecret)
+        // access token ok
+        return respond(200, 'access token ok', [])
+    } catch (err) {
+        // token expired
+        // check refresh token
+        const refreshToken = cookies().get('refreshToken')?.value
+        // no token
+        if(!refreshToken) return respond(403, 'forbidden action', [])
+        // refresh token ok
+        // create new access token
+        const newAccessToken = await authController.createToken(action, refreshToken)
+        return newAccessToken
+    }
 }
 
 /**

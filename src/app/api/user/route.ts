@@ -6,7 +6,7 @@ const userController = new UserController()
 
 export async function GET(req: NextRequest) {
     // create api action
-    const action = api_action(req.nextUrl.pathname, req.method)
+    const action = await api_action(req.nextUrl.pathname, req.method)
     // query param
     const key = Array.from(req.nextUrl.searchParams.keys())[0]
     const queryPayload = {

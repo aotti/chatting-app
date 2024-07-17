@@ -13,7 +13,7 @@ export class ChatController extends Controller {
             const decryptedPayload = await decryptData({encryptedData: payload.data.replaceAll(' ', '+')})
             const parsePayload: IHistoryMessagePayload = JSON.parse(decryptedPayload.match(/\{.*\}/)[0]) 
             // filter payload
-            const filteredPayload = filter(action, parsePayload)
+            const filteredPayload = await filter(action, parsePayload)
             if(filteredPayload.status === 400) {
                 return filteredPayload
             }
@@ -32,11 +32,11 @@ export class ChatController extends Controller {
             const selectResponse = await this.dq.db_func<IHistoryMessagePayload['message_id']>(queryObject)
             // fail
             if(selectResponse.data === null) {
-                result = respond(500, selectResponse.error, [])
+                result = await respond(500, selectResponse.error, [])
             }
             // success
             else if(selectResponse.error === null) {
-                result = respond(200, `${action} success`, selectResponse.data)
+                result = await respond(200, `${action} success`, selectResponse.data)
             }
             // return response
             return result
@@ -44,7 +44,7 @@ export class ChatController extends Controller {
             console.log(`error ChatController historyMessages`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }
@@ -52,7 +52,7 @@ export class ChatController extends Controller {
     async send(action: string, payload: IDirectChatPayload) {
         let result: IResponse
         // filter payload
-        const filteredPayload = filter(action, payload)
+        const filteredPayload = await filter(action, payload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
@@ -72,7 +72,7 @@ export class ChatController extends Controller {
             const insertResponse = await this.dq.insert<any>(queryObject as IQueryInsert)
             // fail 
             if(insertResponse.data === null) {
-                result = respond(500, insertResponse.error, [])
+                result = await respond(500, insertResponse.error, [])
             }
             // success
             else if(insertResponse.error === null) {
@@ -89,7 +89,7 @@ export class ChatController extends Controller {
                 const dmChannel = `DirectChat-${payload.user_with}`
                 await this.pubnubPublish(dmChannel, publishMessage)
                 // response data is number
-                result = respond(200, `${action} success`, [{ messageCount: insertResponse.data }])
+                result = await respond(200, `${action} success`, [{ messageCount: insertResponse.data }])
             }
             // return response
             return result
@@ -97,7 +97,7 @@ export class ChatController extends Controller {
             console.log(`error ChatController send`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }

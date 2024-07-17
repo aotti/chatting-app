@@ -27,17 +27,17 @@ export default function MainContent({ crypto }) {
             {/* main container */}
             <div className="md:grid md:grid-cols-12 gap-2 p-2 h-full">
                 {/* show user list button for mobile */}
-                <div className={`${showUserList ? 'hidden' : null}
+                <div className={`${showUserList ? 'hidden' : ''}
                     sticky top-1/3 w-fit invert -mt-12
                     md:hidden sm:top-1/2`}> 
                     <ShowUserListButton showUserList={showUserList} setShowUserList={setShowUserList} />
                 </div>
                 {/* user list container */}
-                <div className={`${showUserList ? null : 'hidden'}
-                    absolute border-2 border-black p-2 w-2/3 bg-orange-300 dark:bg-sky-600
+                <div className={`${showUserList ? '' : 'hidden'}
+                    absolute z-20 border-2 border-black p-2 w-2/3 bg-orange-300 dark:bg-sky-600
                     md:static md:block md:col-span-3 md:w-auto`}>
                     {/* hide user list button for mobile */}
-                    <div className={`${showUserList ? null : 'hidden'}
+                    <div className={`${showUserList ? '' : 'hidden'}
                         w-fit invert mb-2
                         md:hidden sm:top-1/2`}> 
                         <ShowUserListButton showUserList={showUserList} setShowUserList={setShowUserList} />

@@ -1,7 +1,7 @@
 import { IDirectChatPayload, IHistoryMessagePayload, ILoginPayload, IProfilePayload, IRegisterPayload, IResponse, PayloadTypes } from "../types";
 import { respond } from "./helper";
 
-export default function filter(action: string, payload: PayloadTypes) {
+export default async function filter(action: string, payload: PayloadTypes) {
     console.log(action);
 
     let filterResult: IResponse = {
@@ -16,37 +16,37 @@ export default function filter(action: string, payload: PayloadTypes) {
             // filtering
             [filterStatus, filterMessage] = getUser(payload as IProfilePayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
         case action.includes('register'):
             // filtering
             [filterStatus, filterMessage] = register(payload as IRegisterPayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
         case action.includes('login'):
             // filtering
             [filterStatus, filterMessage] = login(payload as ILoginPayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
         case action.includes('logout'): 
             // filtering
             [filterStatus, filterMessage] = logout(payload as ILoginPayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
         case action.includes('insert chat direct'): 
             // filtering
             [filterStatus, filterMessage] = directChat(payload as IDirectChatPayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
         case action.includes('get chat direct'): 
             // filtering
             [filterStatus, filterMessage] = historyMessages(payload as IHistoryMessagePayload)
             // found error
-            if(!filterStatus) filterResult = respond(400, filterMessage, [])
+            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
             break
     }
     // return response

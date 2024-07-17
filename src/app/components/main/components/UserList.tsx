@@ -48,7 +48,8 @@ export default function UserList({pageHandler, crypto}: IUserList) {
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
                                         startChat(isLogin, setChatWith, user, pageHandler);
-                                        await historyChat(isLogin[1], user, crypto, setMessageItems, historyMessageLog, setHistoryMessageLog);
+                                        if(isLogin[1])
+                                            await historyChat(isLogin[1], user, crypto, setMessageItems, historyMessageLog, setHistoryMessageLog);
                                     }}>
                                     <img src="./img/send.png" alt="chat" width={30} />
                                 </button>
@@ -75,10 +76,14 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
     // check new history message to prevent fetching too much to database
     if(historyMessageLog.length > 0) {
         const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(userWith.id)
+        // if user message is logged
         if(checkUserHistory !== -1) {
+            // get from message data from history message log, no need to fetch
             return setMessageItems(historyMessageLog[checkUserHistory].messages)
         }
     }
+    // access token
+    const token = window.localStorage.getItem('accessToken')
     // fetch stuff
     const historyPayload: IHistoryMessagePayload = {
         user_me: userMe.id,
@@ -86,17 +91,19 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
         amount: 100
     }
     const encryptedHistoryPayload = await encryptData({text: JSON.stringify(historyPayload), key: crypto.key, iv: crypto.iv})
-    const historyFetchOptions: RequestInit = { method: 'GET' }
+    const historyFetchOptions: RequestInit = { 
+        method: 'GET',
+        headers: {
+            'authorization': `Bearer ${token}`
+        }
+    }
     // fetching
     const historyResponse: IResponse = await (await fetcher(`/chat/direct?data=${encryptedHistoryPayload}`, historyFetchOptions)).json()
     // response
     switch(historyResponse.status) {
         case 200: 
-            // ### TAMPILKAN HISTORY MESSAGE LANGSUNG
-            // ### KE MESSAGE COMPONENT DARIPADA 
-            // ### DIKIRIM KE MESSAGE ITEMS DULU 
             const hisResData = historyResponse.data as IHistoryMessagePayload['message_id'][]
-            // ### BUAT LOOP hisResData LALU PAKAI FUNCTION addMessageItem
+            // loop response data
             for(let hrd of hisResData) {
                 // create message object
                 const tempMessages: IMessage['messages'][0] = {
@@ -108,6 +115,7 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
                     created_at: hrd.created_at
                     // ### updated_at later
                 }
+                // set message items for current chat
                 setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
                 // push to new history message
                 setHistoryMessageLog(data => addMessageItem(data, userMe, userWith, tempMessages))

@@ -12,7 +12,7 @@ export default class UserController extends Controller {
     async register(action: string, payload: Omit<IRegisterPayload, 'confirm_password'>) {
         let result: IResponse
         // filter payload
-        const filteredPayload = filter(action, payload)
+        const filteredPayload = await filter(action, payload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
@@ -30,11 +30,11 @@ export default class UserController extends Controller {
             const insertResponse = await this.dq.insert<IRegisterPayload>(queryObject)
             // fail 
             if(insertResponse.data === null) {
-                result = respond(500, insertResponse.error, [])
+                result = await respond(500, insertResponse.error, [])
             }
             // success
             else if(insertResponse.error === null) {
-                result = respond(201, `${action} success`, insertResponse.data)
+                result = await respond(201, `${action} success`, insertResponse.data)
             }
             // return response
             return result
@@ -42,7 +42,7 @@ export default class UserController extends Controller {
             console.log(`error UserController register`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }        
     }
@@ -50,7 +50,7 @@ export default class UserController extends Controller {
     async login(action: string, payload: ILoginPayload, req: NextRequest) {
         let result: IResponse
         // filter payload
-        const filteredPayload = filter(action, payload)
+        const filteredPayload = await filter(action, payload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
@@ -67,21 +67,21 @@ export default class UserController extends Controller {
             const selectResponse = await this.dq.select<ILoginPayload>(queryObject)
             // fail 
             if(selectResponse.data === null) {
-                result = respond(500, selectResponse.error, [])
+                result = await respond(500, selectResponse.error, [])
             }
             // success
             else if(selectResponse.error === null) {
                 // check data length
                 if(selectResponse.data.length === 0) {
                     // username not found
-                    result = respond(400, `username/password doesnt match!`, [])
+                    result = await respond(400, `username/password doesnt match!`, [])
                 }
                 else {
                     // check password
                     const checkPassword = selectResponse.data[0].password === payload.password
                     // wrong 
                     if(!checkPassword)
-                        result = respond(400, `username/password doesnt match!`, [])
+                        result = await respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
                         result = await this.loggedUser(action, selectResponse.data[0], req)
@@ -94,7 +94,7 @@ export default class UserController extends Controller {
             console.log(`error UserController login`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }
@@ -120,7 +120,7 @@ export default class UserController extends Controller {
             const updateResponse = await this.dq.update<Pick<ILoginPayload, 'id'|'display_name'>>(queryObject)
             // fail 
             if(updateResponse.data === null) {
-                result = respond(500, updateResponse.error, [])
+                result = await respond(500, updateResponse.error, [])
             }
             // success
             else if(updateResponse.error === null) {
@@ -145,7 +145,7 @@ export default class UserController extends Controller {
             console.log(`error UserController loggedUser`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }
@@ -153,7 +153,7 @@ export default class UserController extends Controller {
     async getProfiles(action: string, payload: Omit<ILoginPayload, 'username' | 'password'>, req?: NextRequest) {
         let result: IResponse
         // filter payload
-        const filteredPayload = !payload.id ? filter(action, payload as IProfilePayload) : null
+        const filteredPayload = !payload.id ? await filter(action, payload as IProfilePayload) : null
         if(filteredPayload?.status === 400) {
             return filteredPayload
         }
@@ -175,7 +175,7 @@ export default class UserController extends Controller {
             const selectResponse = await this.dq.select<IProfilePayload>(queryObject)
             // fail 
             if(selectResponse.data === null) {
-                result = respond(500, selectResponse.error, [])
+                result = await respond(500, selectResponse.error, [])
             }
             // success
             else if(selectResponse.error === null) {
@@ -219,7 +219,7 @@ export default class UserController extends Controller {
                             // check refresh token
                             const refreshToken = cookies().get('refreshToken')?.value
                             // refresh token invalid
-                            if(!refreshToken) return result = respond(403, `failed to ${action}`, [])
+                            if(!refreshToken) return result = await respond(403, `failed to ${action}`, [])
                             // create new access token
                             const newAccessToken = await this.auth.renewAccessToken(refreshToken, true)
                             verifiedUser = newAccessToken.payload;
@@ -261,7 +261,7 @@ export default class UserController extends Controller {
                     }
                 }
                 // response
-                result = respond(200, `${action} success`, newSelectResData)
+                result = await respond(200, `${action} success`, newSelectResData)
             }
             // return response
             return result
@@ -269,7 +269,7 @@ export default class UserController extends Controller {
             console.log(`error UserController getUsers`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }
@@ -277,7 +277,7 @@ export default class UserController extends Controller {
     async logout(action: string, payload: Pick<ILoginPayload, 'id'>) {
         let result: IResponse
         // filter payload
-        const filteredPayload = filter(action, payload as ILoginPayload)
+        const filteredPayload = await filter(action, payload as ILoginPayload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
@@ -294,7 +294,7 @@ export default class UserController extends Controller {
             const selectResponse = await this.dq.select<ILoginPayload>(queryObject)
             // fail 
             if(selectResponse.data === null) {
-                result = respond(500, selectResponse.error, [])
+                result = await respond(500, selectResponse.error, [])
             }
             // success
             else if(selectResponse.error === null) {
@@ -304,7 +304,7 @@ export default class UserController extends Controller {
                 // delete refresh token
                 cookies().delete('refreshToken')
                 // update user is_login
-                result = respond(204, action, [])
+                result = await respond(204, action, [])
             }
             // return response
             return result
@@ -312,7 +312,7 @@ export default class UserController extends Controller {
             console.log(`error UserController logout`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }

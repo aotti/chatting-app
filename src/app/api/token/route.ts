@@ -7,7 +7,7 @@ const authController = new AuthController()
 
 export async function GET(req: NextRequest) {
     // create api action
-    const action = api_action(req.nextUrl.pathname, req.method)
+    const action = await api_action(req.nextUrl.pathname, req.method)
     // check refresh token
     const refreshToken = cookies().get('refreshToken')?.value
     // no token

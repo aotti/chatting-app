@@ -7,7 +7,7 @@ const userController = new UserController()
 
 export async function POST(req: NextRequest) {
     // create api action
-    const action = api_action(req.nextUrl.pathname, req.method)
+    const action = await api_action(req.nextUrl.pathname, req.method)
     // get payload from client
     const bodyPayload: IRegisterPayload = await req.json()
     // confirm_password isnt required for database 

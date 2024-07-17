@@ -14,8 +14,6 @@ export default function ChattingPage() {
 
     // message items scroll
     useEffect(() => {
-        console.log({messageItems});
-        
         // scroll to bottom
         const messageContainer = qS('#messageContainer')
         messageContainer.scrollTo({top: messageContainer.scrollHeight})
@@ -75,8 +73,9 @@ export default function ChattingPage() {
             <div className="flex items-end row-span-6 border-b border-t">
                 {
                     messageItems
-                        ? <Messages historyMessages={messageItems} chatWith={chatWith} />
-                        : <div id="messageContainer" className="w-full max-h-full p-3 my-auto text-2xl"> Loading... </div>
+                        ? <Messages historyMessages={messageItems} />
+                        // ### loading jadi tampilan kosong + tanggal
+                        : <Messages historyMessages={messageItems} firstMessage={true} />
                 }
             </div>
             {/* send message box */}
@@ -92,36 +91,79 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ historyMessages, chatWith }: {historyMessages: IMessage['messages']; chatWith: LoginProfileType}) {
+function Messages({ historyMessages, firstMessage }: {historyMessages: IMessage['messages']; firstMessage?: boolean}) {
+    if(firstMessage && !historyMessages) {
+        return (
+            // message container
+            <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll"></div>
+        )
+    }
     // filter messages
-    const _filteredMessages = []
+    const _filteredMessages: IMessage['messages'] = []
     new Map(historyMessages.map(v => [v['created_at'], v])).forEach(v => _filteredMessages.push(v))
+    // get dates
+    const dateMessages: IMessage['messages'] = []
+    new Map(_filteredMessages.map(v => [v['date'], v])).forEach(v => dateMessages.push(v))
+    // month names
+    const monthNames = ['January', 'February', 'March', 'April', 
+                        'May', 'June', 'July', 'August', 
+                        'September', 'October', 'November', 'December']
     return (
         // message container
         <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
             {
-                // message items
-                !_filteredMessages ? null : _filteredMessages.map((m, i) => {
-                    return <MessageItem msgItem={m} key={i} />
+            // date items
+            dateMessages.length === 0 
+                ? null
+                : dateMessages.map((d, i) => {
+                    return (
+                        <div key={i}>
+                            <div className="sticky top-0 z-10">
+                                <span className="bg-lime-300 dark:bg-pink-600 rounded-md p-1"> 
+                                    {/* eg: 01/30/1999 to Januari 30, 1999 */}
+                                    {d.date.replace(/\d+/, monthNames[+d.date.split('/')[0]-1]).replaceAll('/', ', ').replace(', ', ' ')} 
+                                </span>
+                            </div>
+                            {
+                                // message items
+                                !_filteredMessages ? null : _filteredMessages.map((m, i) => {
+                                    if(m.date === d.date)
+                                        return <MessageItem msgItem={m} key={i} />
+                                })
+                            }
+                        </div>
+                    )
                 })
             }
         </div>
     )
 }
 
+const currentTime = new Date().toISOString()
 function MessageItem({msgItem}: {msgItem: IMessage['messages'][0]}) {
     return (
         <div className={`flex ${msgItem.style}`}>
             <div className="border rounded-md min-w-32 p-1 my-2 bg-orange-400 dark:bg-sky-700">
                 {/* author & status*/}
-                <p className="text-xs flex justify-between"> 
+                <p className="text-xs flex justify-between "> 
                     <span> {msgItem.user} </span>
-                    <span id="messageStatus" className="brightness-150"> {msgItem.style.includes('start') ? '✔' : '🕗'} </span>
+                    <span id="messageStatus" className="brightness-150"> 
+                        {   // for incoming messages
+                            msgItem.style.includes('start') 
+                                ? '✔' 
+                                // check message item created_at 
+                                // if past the current time consider delivered
+                                : currentTime > msgItem.created_at 
+                                    ? '✔' 
+                                    // if no, the its delivering
+                                    : '🕗' 
+                        } 
+                    </span>
                 </p>
                 {/* message */}
                 <p className="text-left"> {msgItem.text} </p>
                 {/* time */}
-                <p className="text-right text-xs border-t"> {`${msgItem.date} - ${msgItem.time}`} </p>
+                <p className="text-right text-xs border-t"> {msgItem.time} </p>
             </div>
         </div>
     )
@@ -130,20 +172,19 @@ function MessageItem({msgItem}: {msgItem: IMessage['messages'][0]}) {
 type MessageType<T> = Dispatch<SetStateAction<T>>
 async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileType, userTo: LoginProfileType, setMessageItems: MessageType<IMessage['messages']>, setHistoryMessageLog: MessageType<IMessage[]>) {
     ev.preventDefault()
-    // access token
-    const token = window.localStorage.getItem('accessToken')
     // form inputs
     // filter button elements
     const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
+    const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
     const formData: IDirectChatPayload = {
         // author is user_id
         user_me: userFrom.id,
         user_with: userTo.id,
         message: JSON.stringify(formInputs[0].value),
         time: messageTime,
-        date: '',
+        date: messageDate,
         created_at: new Date().toISOString()
     }
     // check message empty
@@ -154,15 +195,18 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileTy
         style: 'justify-end',
         text: formInputs[0].value,
         time: messageTime,
-        date: '',
+        date: messageDate,
         created_at: new Date().toISOString()
     }
-    setMessageItems(data => [...data, tempMessages])
+    // check if data null
+    setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
     // add message to history log
     setHistoryMessageLog(data => addMessageItem(data, userFrom, userTo, tempMessages))
     // empty message input
     const messageBox = qS('#messageBox') as HTMLInputElement
     messageBox.value = ''
+    // access token
+    const token = window.localStorage.getItem('accessToken')
     // send message
     // fetch options
     const messageFetchOptions: RequestInit = {

@@ -7,7 +7,7 @@ const userController = new UserController()
 
 export async function POST(req: NextRequest) {
     // create api action
-    const action = api_action(req.nextUrl.pathname, req.method)
+    const action = await api_action(req.nextUrl.pathname, req.method)
     // ### CHECK ACCESS TOKEN / REFRESH TOKEN
     // ### NO NEED PAYLOAD
     // get payload from client

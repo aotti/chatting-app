@@ -12,13 +12,13 @@ export default class AuthController {
             // create new access token
             const newAccessToken = await this.renewAccessToken(refreshToken)
             // response
-            result = respond(201, action, [{ token: newAccessToken }])
+            result = await respond(201, action, [{ token: newAccessToken }])
             return result
         } catch (err) {
             console.log(`error AuthController createToken`)
             console.log(err)
             // return response
-            result = respond(500, err.message, [])
+            result = await respond(500, err.message, [])
             return result
         }
     }

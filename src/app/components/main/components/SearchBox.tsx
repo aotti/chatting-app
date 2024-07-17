@@ -54,7 +54,7 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
             if(searchResponse.data[0]?.token) {
                 window.localStorage.setItem('accessToken', searchResponse.data[0].token)
                 // delete token array
-                searchResponse.data.shift()
+                delete searchResponse.data[0].token
             }
             // set users found state
             setUsersFound(searchResponse.data)
