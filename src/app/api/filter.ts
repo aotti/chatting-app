@@ -14,46 +14,36 @@ export default async function filter(action: string, payload: PayloadTypes) {
     switch(true) {
         case action.includes('get user'):
             // filtering
-            [filterStatus, filterMessage] = getUser(payload as IProfilePayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = getUser(payload)
             break
         case action.includes('register'):
             // filtering
-            [filterStatus, filterMessage] = register(payload as IRegisterPayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = register(payload)
             break
         case action.includes('login'):
             // filtering
-            [filterStatus, filterMessage] = login(payload as ILoginPayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = login(payload)
             break
         case action.includes('logout'): 
             // filtering
-            [filterStatus, filterMessage] = logout(payload as ILoginPayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = logout(payload)
             break
         case action.includes('insert chat direct'): 
             // filtering
-            [filterStatus, filterMessage] = directChat(payload as IDirectChatPayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = directChat(payload)
             break
         case action.includes('get chat direct'): 
             // filtering
-            [filterStatus, filterMessage] = historyMessages(payload as IHistoryMessagePayload)
-            // found error
-            if(!filterStatus) filterResult = await respond(400, filterMessage, [])
+            [filterStatus, filterMessage] = historyMessages(payload)
             break
     }
+    // found error
+    if(!filterStatus) filterResult = await respond(400, filterMessage, [])
     // return response
     return filterResult
 }
 
-function getUser(payload: IProfilePayload) {
+function getUser(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /display_name/g
@@ -68,7 +58,8 @@ function getUser(payload: IProfilePayload) {
         // filter payload value
         switch(key) {
             case 'display_name':
-                resultValue = valueCheck(key, value, 'string', 3); break
+                const displayNameRegex = /[^a-z\s]/gi
+                resultValue = valueCheck(key, value, 'string', 3, displayNameRegex); break
         }
         // error found
         if(!resultValue[0]) return resultValue
@@ -77,7 +68,7 @@ function getUser(payload: IProfilePayload) {
     return resultValue
 }
 
-function register(payload: Omit<IRegisterPayload, 'confirm_password'>) {
+function register(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /is_login|display_name|username|password/g
@@ -94,9 +85,11 @@ function register(payload: Omit<IRegisterPayload, 'confirm_password'>) {
             case 'is_login':
                 resultValue = valueCheck(key, value, 'boolean'); break
             case 'display_name':
-                resultValue = valueCheck(key, value, 'string', 5); break
+                const displayNameRegex = /[^a-z\s]/gi
+                resultValue = valueCheck(key, value, 'string', 5, displayNameRegex); break
             case 'username':
-                resultValue = valueCheck(key, value, 'string', 5); break
+                const usernameRegex = /[^a-z0-9]/gi
+                resultValue = valueCheck(key, value, 'string', 5, usernameRegex); break
             // hashed password
             case 'password': break
         }
@@ -107,7 +100,7 @@ function register(payload: Omit<IRegisterPayload, 'confirm_password'>) {
     return resultValue
 }
 
-function login(payload: ILoginPayload) {
+function login(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /username|password/g
@@ -122,7 +115,8 @@ function login(payload: ILoginPayload) {
         // filter payload value
         switch(key) {
             case 'username':
-                resultValue = valueCheck(key, value, 'string', 5); break
+                const usernameRegex = /[^a-z0-9]/gi
+                resultValue = valueCheck(key, value, 'string', 5, usernameRegex); break
             // hashed password
             case 'password': break
         }
@@ -133,7 +127,7 @@ function login(payload: ILoginPayload) {
     return resultValue
 }
 
-function logout(payload: ILoginPayload) {
+function logout(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /id/g
@@ -157,7 +151,7 @@ function logout(payload: ILoginPayload) {
     return resultValue
 }
 
-function directChat(payload: IDirectChatPayload) {
+function directChat(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /user_me|user_with|message/g
@@ -185,7 +179,7 @@ function directChat(payload: IDirectChatPayload) {
     return resultValue
 }
 
-function historyMessages(payload: IHistoryMessagePayload) {
+function historyMessages(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /user_me|user_with|amount/g
@@ -200,9 +194,9 @@ function historyMessages(payload: IHistoryMessagePayload) {
         // filter payload value
         switch(key) {
             case 'user_me':
-                resultValue = valueCheck(key, value, 'string', 5); break
+                resultValue = uuidCheck(key, value); break
             case 'user_with':
-                resultValue = valueCheck(key, value, 'string', 5); break
+                resultValue = uuidCheck(key, value); break
             case 'amount':
                 resultValue = valueCheck(key, value, 'number'); break
         }
@@ -238,13 +232,17 @@ function keyCheck(payloadKeys: string, regex: RegExp, length: number): [boolean,
  * @param length value length
  * @returns true if no error
  */
-function valueCheck(key: string, value: string | number | boolean, type: string, length?: number): [boolean, string] {
+function valueCheck(key: string, value: string | number | boolean, type: string, length?: number, regex?: RegExp): [boolean, string] {
     // check type
     if(typeof value !== type)
         return [false, `"${key}" type does not match!`]
     // check length
     if((value as string).length < length)
         return [false, `"${key}" must have atleast ${length} characters!`]
+    // check regex
+    const valRegex = (value as string).match(regex)
+    if(regex && valRegex)
+        return [false, `"${key}" is not allowed to have these characters (${valRegex.join('')})`]
     // no error
     return [true, '']
 }

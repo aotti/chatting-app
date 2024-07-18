@@ -11,10 +11,11 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                 {/* display name */}
                 <div className="grid grid-cols-2 text-black">
                     <label htmlFor="display_name" className="dark:text-white"> Name </label>
-                    <input type="text" id="display_name" minLength={5} maxLength={16} required
+                    <input type="text" id="display_name" minLength={5} maxLength={32} required
                         className="p-1 rounded-md"
                         autoFocus
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> 5 ~ 32 characters (letters) </span>
                 </div>
                 {/* username */}
                 <div className="grid grid-cols-2 text-black">
@@ -22,6 +23,7 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                     <input type="text" id="username" minLength={5} maxLength={16} required
                         className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> 5 ~ 16 characters (letters & numbers) </span>
                 </div>
                 {/* password */}
                 <div className="grid grid-cols-2 text-black">
@@ -29,6 +31,7 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                     <input type="password" id="password" minLength={8} required
                         className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> min. 8 characters </span>
                 </div>
                 {/* confirm password */}
                 <div className="grid grid-cols-2 text-black">
@@ -36,6 +39,7 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                     <input type="password" id="confirm_password" minLength={8} required
                         className="p-1 rounded-md"
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> min. 8 characters </span>
                 </div>
                 {/* message */}
                 <div className="font-semibold">
@@ -72,7 +76,14 @@ async function registerAccount(ev: FormEvent<HTMLFormElement>) {
         password: sha256(formInputs[2].value),
         confirm_password: sha256(formInputs[3].value)
     }
-    
+    // check if display name have any character beside [a-z] and \s
+    if(formData.display_name.match(/[^a-z\s]/gi)) {
+        return errorMessage.textContent = `any symbol is not allowed! (Name)`
+    }
+    // check if username have any character beside LETTERS and NUMBERS
+    if(formData.username.match(/[^a-z0-9]/gi)) {
+        return errorMessage.textContent = `only letters and numbers allowed! (Username)`
+    }
     // confirm password
     if(formData.password !== formData.confirm_password) {
         return errorMessage.textContent = `password doesn't match!`

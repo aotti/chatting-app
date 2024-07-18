@@ -175,6 +175,8 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileTy
     // form inputs
     // filter button elements
     const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
+    // check input empty
+    if(formInputs[0].value === '') return
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
     const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})

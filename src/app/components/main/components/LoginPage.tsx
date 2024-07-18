@@ -19,6 +19,7 @@ export default function LoginPage({pageHandler}: {pageHandler: (page: string) =>
                         className="p-1 rounded-md text-black"
                         autoFocus
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> 5 ~ 16 characters </span>
                 </div>
                 {/* password */}
                 <div className="grid grid-cols-2 text-black">
@@ -26,6 +27,7 @@ export default function LoginPage({pageHandler}: {pageHandler: (page: string) =>
                     <input type="password" id="password" minLength={8} required 
                         className="p-1 rounded-md text-black"
                         onChange={(event) => formInputLength(event)}/>
+                    <span className="col-start-2 text-sm text-left dark:text-white"> min. 8 characters </span>
                 </div>
                 {/* message */}
                 <div className="font-semibold">
@@ -59,6 +61,10 @@ async function loginAccount(ev: FormEvent<HTMLFormElement>, setIsLogin) {
     const formData: ILoginPayload = {
         username: formInputs[0].value,
         password: sha256(formInputs[1].value)
+    }
+    // check if username have any character beside LETTERS and NUMBERS
+    if(formData.username.match(/[^a-z0-9]/gi)) {
+        return errorMessage.textContent = `only letters and numbers allowed! (Username)`
     }
     // login account
     // fetch options
