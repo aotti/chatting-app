@@ -212,8 +212,7 @@ export default class UserController extends Controller {
                     newSelectResData = [] as NewSelectResDataType[]
                     // get user data from access token
                     const accessToken = req.headers.get('authorization')?.replace('Bearer ', '') || 'null'
-                    const checkAccessToken = JSON.parse(accessToken) == null ? null : true
-                    if(checkAccessToken) {
+                    if(accessToken !== 'null') {
                         let verifiedUser = await AuthController.verifyAccessToken({action: 'verify-payload', token: accessToken})
                         // token expired, renew with refresh token
                         if(!verifiedUser) {
