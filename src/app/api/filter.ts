@@ -71,7 +71,7 @@ function getUser(payload: PayloadTypes) {
 function register(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /is_login|display_name|username|password/g
+    const regexKeys = /display_name|username|password/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 4)
     if(!resultKey[0]) return resultKey
@@ -82,8 +82,6 @@ function register(payload: PayloadTypes) {
         const value = payload[key]
         // filter payload value
         switch(key) {
-            case 'is_login':
-                resultValue = valueCheck(key, value, 'boolean'); break
             case 'display_name':
                 const displayNameRegex = /[^a-z\s]/gi
                 resultValue = valueCheck(key, value, 'string', 5, displayNameRegex); break
