@@ -73,7 +73,7 @@ function register(payload: PayloadTypes) {
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /display_name|username|password/g
     // filter payload key
-    const resultKey = keyCheck(payloadKeys, regexKeys, 4)
+    const resultKey = keyCheck(payloadKeys, regexKeys, 3)
     if(!resultKey[0]) return resultKey
     // payload value
     let resultValue: [boolean, string] = [true, '']
