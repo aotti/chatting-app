@@ -37,7 +37,7 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
     const usernameInput = formInputs[0].value
     // search user
     // fetch options
-    const searchFetchOptions: RequestInit = {
+    const searchFetchOptions: RequestInit = !token ? { method: 'GET' } : {
         method: 'GET',
         headers: {
             'authorization': `Bearer ${token}`

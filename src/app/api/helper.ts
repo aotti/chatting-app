@@ -40,7 +40,7 @@ export async function verifyUserTokens(accessToken: string, action: string) {
         const accessTokenSecret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
         const verifyAccessToken = await jwtVerify<LoginProfileType>(accessToken, accessTokenSecret)
         // access token ok
-        return respond(200, 'access token ok', [])
+        return respond(200, 'access token ok', [{ token: accessToken }])
     } catch (err) {
         // token expired
         // check refresh token

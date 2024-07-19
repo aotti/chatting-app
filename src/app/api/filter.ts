@@ -238,8 +238,8 @@ function valueCheck(key: string, value: string | number | boolean, type: string,
     if((value as string).length < length)
         return [false, `"${key}" must have atleast ${length} characters!`]
     // check regex
-    const valRegex = (value as string).match(regex)
-    if(regex && valRegex)
+    const valRegex = regex ? (value as string).match(regex) : null
+    if(valRegex)
         return [false, `"${key}" is not allowed to have these characters (${valRegex.join('')})`]
     // no error
     return [true, '']

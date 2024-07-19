@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
         // access token / refresh token invalid
         return NextResponse.json(verify, { status: verify.status })
     }
-    // send chat result
-    const result = await chatController.send(action, bodyPayload)
+    // send chat result, token for renew online status
+    const result = await chatController.send(action, bodyPayload, verify.data[0].token)
     // modify result if theres new access token
     if(verify.status === 201)
         result.data[0] = {...result.data[0], ...verify.data[0]}

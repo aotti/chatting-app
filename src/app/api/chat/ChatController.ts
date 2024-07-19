@@ -2,6 +2,7 @@ import { IDirectChatPayload, IHistoryMessagePayload, IMessage, IQueryInsert, IQu
 import { Controller } from "../Controller";
 import filter from "../filter";
 import { decryptData, respond } from "../helper";
+import AuthController from "../token/AuthController";
 
 export class ChatController extends Controller {
 
@@ -49,7 +50,7 @@ export class ChatController extends Controller {
         }
     }
     
-    async send(action: string, payload: IDirectChatPayload) {
+    async send(action: string, payload: IDirectChatPayload, tempToken?: string) {
         let result: IResponse
         // filter payload
         const filteredPayload = await filter(action, payload)
@@ -78,16 +79,31 @@ export class ChatController extends Controller {
             else if(insertResponse.error === null) {
                 // pubnub
                 const publishMessage: IMessage['messages'][0] = {
-                    style: '',
+                    style: 'justify-start',
                     user: payload.user_me,
                     text: JSON.parse(payload.message),
                     time: payload.time,
-                    date: '',
+                    date: payload.date,
                     created_at: payload.created_at
                 }
                 // pubnub 
                 const dmChannel = `DirectChat-${payload.user_with}`
                 await this.pubnubPublish(dmChannel, publishMessage)
+                // RENEW TOKEN FOR ONLINE STATUS
+                if(tempToken) {
+                    // get user data from access token
+                    const verifiedUser = await AuthController.verifyAccessToken({action: 'verify-payload', token: tempToken})
+                    // update my token (online/offline)
+                    const updatedToken: string = await this.alterLoggedUsers({action: 'renew', data: {id: verifiedUser.id, display_name: verifiedUser.display_name}})
+                    console.log(updatedToken 
+                        ? `my token updated ${verifiedUser.display_name}` 
+                        : `update token failed ${verifiedUser.display_name}`
+                    );
+                    // publish updated token
+                    if(updatedToken) await this.pubnubPublish('logged-users', updatedToken)
+                    // fail to update token
+                    else await this.pubnubPublish('logged-users', JSON.stringify(updatedToken))
+                }
                 // response data is number
                 result = await respond(200, `${action} success`, [{ messageCount: insertResponse.data }])
             }

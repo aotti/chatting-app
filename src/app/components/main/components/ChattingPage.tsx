@@ -58,7 +58,7 @@ export default function ChattingPage() {
     }, [])
 
     return (
-        <div className="grid grid-rows-8 h-full p-2">
+        <div className="grid grid-rows-8 h-screen p-2">
             {/* user */}
             <div className="flex justify-center gap-4 p-2">
                 <div className="rounded-full border w-20 md:w-16 ">
@@ -75,7 +75,7 @@ export default function ChattingPage() {
                     messageItems
                         ? <Messages historyMessages={messageItems} />
                         // ### loading jadi tampilan kosong + tanggal
-                        : <Messages historyMessages={messageItems} firstMessage={true} />
+                        : <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll"> Loading... </div>
                 }
             </div>
             {/* send message box */}
@@ -93,6 +93,8 @@ export default function ChattingPage() {
 
 function Messages({ historyMessages, firstMessage }: {historyMessages: IMessage['messages']; firstMessage?: boolean}) {
     if(firstMessage && !historyMessages) {
+        console.log('firstMessage');
+        
         return (
             // message container
             <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll"></div>

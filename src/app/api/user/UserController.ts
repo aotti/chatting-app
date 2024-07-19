@@ -150,7 +150,7 @@ export default class UserController extends Controller {
         }
     }
 
-    async getProfiles(action: string, payload: Omit<ILoginPayload, 'username' | 'password'>, req?: NextRequest) {
+    async getProfiles(action: string, payload: Omit<ILoginPayload, 'username' | 'password'>, req?: NextRequest, tempToken?: string) {
         let result: IResponse
         // filter payload
         const filteredPayload = !payload.id ? await filter(action, payload as IProfilePayload) : null
@@ -210,24 +210,10 @@ export default class UserController extends Controller {
                 // get user case
                 else {
                     newSelectResData = [] as NewSelectResDataType[]
-                    // get user data from access token
-                    const accessToken = req.headers.get('authorization')?.replace('Bearer ', '') || 'null'
-                    if(accessToken !== 'null') {
-                        let verifiedUser = await AuthController.verifyAccessToken({action: 'verify-payload', token: accessToken})
-                        // token expired, renew with refresh token
-                        if(!verifiedUser) {
-                            // check refresh token
-                            const refreshToken = cookies().get('refreshToken')?.value
-                            // refresh token invalid
-                            if(!refreshToken) return result = await respond(403, `failed to ${action}`, [])
-                            // create new access token
-                            const newAccessToken = await this.auth.renewAccessToken(refreshToken, true)
-                            verifiedUser = newAccessToken.payload;
-                            // add token prop to response data
-                            (newSelectResData as {token: string}[]).push({
-                                token: newAccessToken.token
-                            })
-                        }
+                    // RENEW TOKEN FOR ONLINE STATUS
+                    if(tempToken) {
+                        // get user data from access token
+                        const verifiedUser = await AuthController.verifyAccessToken({action: 'verify-payload', token: tempToken})
                         // update my token (online/offline)
                         const updatedToken: string = await this.alterLoggedUsers({action: 'renew', data: {id: verifiedUser.id, display_name: verifiedUser.display_name}})
                         console.log(updatedToken 
@@ -236,6 +222,7 @@ export default class UserController extends Controller {
                         );
                         // publish updated token
                         if(updatedToken) await this.pubnubPublish('logged-users', updatedToken)
+                        // fail to update token
                         else await this.pubnubPublish('logged-users', JSON.stringify(updatedToken))
                     }
                     
