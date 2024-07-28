@@ -107,7 +107,7 @@ export class DatabaseQueries {
      * - table words = select 'id, category, word' = 123; select 'id, word' = 13;
      * 
      * list of column:
-     * - users - id | is_login❌| username | password | display_name | created_at | updated_at | deleted_at
+     * - users - id | last_access | username | password | display_name | created_at | updated_at | deleted_at
      * - profiles - id | user_id (id, username, display_name) | description | created_at | updated_at | deleted_at
      * - messages - 
      * - direct_chats - id | user_from | user_to | message_id (user_id, message, created_at, updated_at)
@@ -120,7 +120,7 @@ export class DatabaseQueries {
         const selectedColumns = []
         // for users table
         if(type === 'users') {
-            const pickerList: string[] = ['id', 'is_login', 'username', 'password', 'display_name', 'created_at', 'updated_at', 'deleted_at']
+            const pickerList: string[] = ['id', 'last_access', 'username', 'password', 'display_name', 'created_at', 'updated_at', 'deleted_at']
             selectedColumns.push(columnPicker(pickerList))
         }
         // for profiles table

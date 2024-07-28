@@ -5,16 +5,15 @@ import { ChatWithContext } from "../../../context/ChatWithContext"
 import { IHistoryMessagePayload, IMessage, IResponse } from "../../../types"
 import { encryptData } from "../../../api/helper"
 import { addMessageItem, fetcher } from "../../helper"
+import { DarkModeContext } from "../../../context/DarkModeContext"
 
 interface IUserList {
-    pageHandler: (page: string) => void;
-    crypto: {
-        key: string;
-        iv: string;
-    };
+    crypto: Record<'key'|'iv', string>
 }
 
-export default function UserList({pageHandler, crypto}: IUserList) {
+export default function UserList({ crypto }: IUserList) {
+    // get page for display
+    const { setDisplayPage } = useContext(DarkModeContext)
     // login profile context
     const { isLogin, setShowOtherProfile } = useContext(LoginProfileContext)
     // chat with context
@@ -47,7 +46,7 @@ export default function UserList({pageHandler, crypto}: IUserList) {
                                 {/* chat button */}
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
-                                        startChat(isLogin, setChatWith, user, pageHandler);
+                                        startChat(isLogin, setChatWith, user, setDisplayPage);
                                         if(isLogin[1])
                                             await historyChat(isLogin[1], user, crypto, setMessageItems, historyMessageLog, setHistoryMessageLog);
                                     }}>
@@ -62,11 +61,11 @@ export default function UserList({pageHandler, crypto}: IUserList) {
     )
 }
 
-function startChat(isLogin, setChatWith, user, pageHandler) {
+function startChat(isLogin, setChatWith, user, setDisplayPage) {
     // get user data to chat with
     setChatWith(user)
     // change page
-    pageHandler(isLogin[0] ? 'chatting' : 'login')
+    setDisplayPage(isLogin[0] ? 'chatting' : 'login')
 }
 
 type MessageType<T> = Dispatch<SetStateAction<T>>

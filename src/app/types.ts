@@ -1,6 +1,12 @@
 import { PostgrestError } from "@supabase/supabase-js";
-import { UUID } from "crypto";
 import { LoginProfileType } from "./context/LoginProfileContext";
+
+// other
+// timeout state
+interface IUserTimeout {
+    user_id: string;
+    timeout: NodeJS.Timeout;
+}
 
 // ~~ POSTGREST RETURN TYPE PROMISE ~~
 type PG_PromiseType<Data> = Promise<{ data: Data[] | null, error: PostgrestError | null }>
@@ -112,6 +118,7 @@ interface ILogin {
     id?: string;
     is_login?: string;
     display_name?: string;
+    last_access?: string;
     updated_at?: string;
 }
 
@@ -174,6 +181,8 @@ interface IHistoryMessagePayload extends IDirectChat {
 }
 
 export type {
+    // other
+    IUserTimeout,
     PG_PromiseType,
     // queries
     IQuerySelect,

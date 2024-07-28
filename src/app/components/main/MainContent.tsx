@@ -9,14 +9,11 @@ import UserList from "./components/UserList"
 import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
 import { LoginProfileContext } from "../../context/LoginProfileContext"
+import { DarkModeContext } from "../../context/DarkModeContext"
 
 export default function MainContent({ crypto }) {
     // get page for display
-    const [displayPage, setDisplayPage] = useState('home')
-    // page click handler
-    const getPageHandler = (page: string) => {
-        setDisplayPage(page)
-    }
+    const { displayPage } = useContext(DarkModeContext)
     // display user list
     const [showUserList, setShowUserList] = useState(false)
     // login profile state
@@ -55,7 +52,7 @@ export default function MainContent({ crypto }) {
                             ? /* show other's profile */
                             <Profile profileClassName="md:w-auto" userData={showOtherProfile[1]} />
                             : /* back button clicked on other's profile, back to user list */
-                            <UserList pageHandler={ getPageHandler } crypto={crypto} />
+                            <UserList crypto={crypto} />
                     }
                 </div>
                 {/* main container */}
@@ -70,10 +67,10 @@ export default function MainContent({ crypto }) {
                             isLogin[0] && displayPage == 'chatting' 
                                 ? <ChattingPage />
                                 : displayPage == 'register'
-                                    ? <RegisterPage pageHandler={ getPageHandler } />
+                                    ? <RegisterPage />
                                     : displayPage == 'login'
-                                        ? <LoginPage pageHandler={ getPageHandler } />
-                                        : <HomePage pageHandler={ getPageHandler } />
+                                        ? <LoginPage />
+                                        : <HomePage />
                         }
                     </div>
                 </div>

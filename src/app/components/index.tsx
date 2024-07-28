@@ -1,31 +1,22 @@
 'use client'
 
-import { useState, useEffect, Dispatch, SetStateAction } from "react"
+import { useState, useEffect } from "react"
 import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
-import { fetcher, verifyAccessToken } from "./helper"
-import { IHistoryMessagePayload, ILoggedUsers, IMessage, IResponse } from "../types"
+import { fetcher, getExpiredUsers, getUnreadMessages, verifyAccessToken } from "./helper"
+import { IMessage, IResponse, IUserTimeout } from "../types"
 import { DarkModeContext } from "../context/DarkModeContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
 import FooterContent from "./footer/FooterContent"
 import Pubnub, { ListenerParameters } from "pubnub"
 import { PubNubProvider } from "pubnub-react"
-import { decryptData } from "../api/helper"
 
 interface IndexProps {
     accessSecret: string;
     pubnubKeys: Record<'sub'|'pub'|'uuid', string>;
-    crypto: {
-        key: string;
-        iv: string;
-    };
-}
-// timeout state
-interface IUserTimeout {
-    user_id: string;
-    timeout: NodeJS.Timeout;
+    crypto: Record<'key'|'iv', string>;
 }
 
 export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) {
@@ -38,10 +29,14 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     // header-MenuButton
     // dark mode state
     const [darkMode, setDarkMode] = useState(false)
+    // get page for display
+    const [displayPage, setDisplayPage] = useState('home')
     // dark mode props
     const darkModeStates = {
         darkMode: darkMode,
-        setDarkMode: setDarkMode
+        setDarkMode: setDarkMode,
+        displayPage: displayPage,
+        setDisplayPage: setDisplayPage
     }
 
     // main-SearchBox
@@ -84,6 +79,8 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     const [messageItems, setMessageItems] = useState<IMessage['messages']>(null)
     // history message log
     const [historyMessageLog, setHistoryMessageLog] = useState<IMessage[]>([])
+    // unread message
+    const [unreadMessageItems, setUnreadMessageItems] = useState(null)
     // chat with states
     const chatWithStates = {
         chatWith: chatWith,
@@ -91,7 +88,9 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         messageItems: messageItems,
         setMessageItems: setMessageItems,
         historyMessageLog: historyMessageLog,
-        setHistoryMessageLog: setHistoryMessageLog
+        setHistoryMessageLog: setHistoryMessageLog,
+        unreadMessageItems: unreadMessageItems,
+        setUnreadMessageItems: setUnreadMessageItems
     }
 
     const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])
@@ -107,9 +106,13 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         if(!getAccessToken) return
         // verify token
         verifyAccessToken(getAccessToken, accessSecret)
-        .then(verifiedUser => {
+        .then(async verifiedUser => {
             // token expired
             if(!verifiedUser) throw 'token expired'
+            // ### GET UNREAD MESSAGE BEFORE SET LOGIN
+            // ### GET UNREAD MESSAGE BEFORE SET LOGIN
+            const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType).id)
+            setUnreadMessageItems(unreadMessages)
             // set state
             setIsLogin([true, verifiedUser as LoginProfileType])
         }).catch(async error => {
@@ -126,12 +129,17 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
                     // save token to local storage
                     window.localStorage.setItem('accessToken', getAccessToken)
+                    // ### GET UNREAD MESSAGE BEFORE SET LOGIN
+                    // ### GET UNREAD MESSAGE BEFORE SET LOGIN
+                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType).id)
+                    setUnreadMessageItems(unreadMessages)
                     // set state
                     setIsLogin([true, verifiedUser as LoginProfileType])
                     break
                 default: 
-                    // remove access token if exist
+                    // remove access token & last access if fail to renew
                     window.localStorage.removeItem('accessToken')
+                    window.localStorage.removeItem('lastAccess')
                     console.log(renewAccessToken)
                     break
             }
@@ -172,8 +180,9 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                 }
                 const expiredUsers = await getExpiredUsers(crypto, accessSecret, userStates)
                 if(!expiredUsers) return
-                // change user found status (profile status)
+                // someone is away
                 for(let expUser of expiredUsers) {
+                    // change user found status (profile status)
                     const foundUser = usersFound ? usersFound.map(u => u.id).indexOf(expUser.id) : -1
                     if(foundUser !== -1) {
                         // check if user alr have timeout 
@@ -195,7 +204,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                                 // set users found to offline 
                                 usersFound[foundUser].is_login = 'Offline'
                                 setUsersFound(usersFound)
-                            }, 60_000) // 5min 
+                            }, 300_000) // 5min 
                         }
                         setUserTimeout(user => [...user, goingOffline])
                     }
@@ -211,15 +220,39 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                 console.log('updateUserStatus error', error)
             }
         }
+        
+        const updateStatusAndLastAccess = async () => {
+            updateUserStatus()
+            // // update user last access on client and db
+            // window.localStorage.setItem('lastAccess', new Date().toISOString())
+            // // ### fetch for update
+            // // ### fetch for update
+            // if(!isLogin[1]) return
+            // const accessToken = window.localStorage.getItem('accessToken')
+            // const lastAccess = window.localStorage.getItem('lastAccess')
+            // const fetchOptions: RequestInit = {
+            //     method: 'PATCH',
+            //     headers: {
+            //         'authorization': `Bearer ${accessToken}`
+            //     },
+            //     body: JSON.stringify({
+            //         id: isLogin[1].id,
+            //         last_access: lastAccess
+            //     })
+            // }
+            // const lastAccessResponse: IResponse = await (await fetcher('/user/lastaccess', fetchOptions)).json()
+            // console.log({lastAccessResponse});
+            
+        }
 
-        document.addEventListener('blur', updateUserStatus)
         document.addEventListener('click', updateUserStatus)
         document.addEventListener('keyup', updateUserStatus)
+        document.addEventListener('blur', updateStatusAndLastAccess)
 
         return () => {
-            document.removeEventListener('blur', updateUserStatus)
             document.removeEventListener('click', updateUserStatus)
             document.removeEventListener('keyup', updateUserStatus)
+            document.removeEventListener('blur', updateStatusAndLastAccess)
         }
     }, [usersFound, chatWith, isLogin, userTimeout])
     
@@ -253,67 +286,4 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
             </LoginProfileContext.Provider>
         </DarkModeContext.Provider>
     )
-}
-
-type IUserStates = {
-    setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
-    setUsersFound: Dispatch<SetStateAction<LoginProfileType[]>>;
-    setUserTimeout: Dispatch<SetStateAction<IUserTimeout[]>>;
-}
-async function getExpiredUsers(crypto: IndexProps['crypto'], accessSecret: string, userStates: IUserStates) {
-    try {
-        // nonce and encrypted data
-        const encryptedData = window.localStorage.getItem('loggedUsers')
-        // decrypt the data
-        const decrypted = await decryptData({key: crypto.key, iv: crypto.iv, encryptedData: encryptedData})
-        const filterDecrypted = decrypted.match(/\[.*\]/)[0]
-        // verify the token
-        const expiredUsers = [] as {id: string}[]
-        const usersData = JSON.parse(filterDecrypted) as ILoggedUsers[]
-        for(let user of usersData) {
-            const isVerified = await verifyAccessToken(user.token, accessSecret, true) as boolean
-            // token expired
-            if(!isVerified) {
-                // push id of user who is away
-                expiredUsers.push({ id: user.id })
-            }
-            // token active
-            else {
-                // set users to online
-                const { setChatWith, setUsersFound, setUserTimeout }: IUserStates = userStates
-                // remove timeout user if exist
-                setUserTimeout(data => {
-                    if(data.length > 0) {
-                        // clear timeout
-                        const getTimeout = data.filter(u => u.user_id === user.id)[0]
-                        clearTimeout(getTimeout.timeout)
-                        // return data with filtered user
-                        return data.filter(u => u.user_id !== user.id)
-                    }
-                    else return data
-                })
-                // user chat with status
-                setChatWith(data => {
-                    if(data != null && data?.id === user.id) {
-                        data.is_login = 'Online'
-                        return data
-                    }
-                    else return data
-                })
-                // users found status
-                setUsersFound(data => {
-                    const isUserMatch = data != null ? data.map(u => u.id).indexOf(user.id) : -1
-                    if(isUserMatch !== -1) {
-                        data[isUserMatch].is_login = 'Online'
-                        return data
-                    }
-                    else return data
-                })
-            }
-        }
-        // return expired users
-        return expiredUsers
-    } catch (error) {
-        return null
-    }
 }

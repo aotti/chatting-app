@@ -1,4 +1,4 @@
-import { respond } from "../helper"
+import { encryptData, respond } from "../helper"
 import { ILoggedUsers, ILoginPayload, IProfilePayload, IQueryInsert, IQuerySelect, IQueryUpdate, IRegisterPayload, IResponse } from "../../types"
 import filter from "../filter"
 import { cookies } from "next/headers"
@@ -6,6 +6,7 @@ import { NextRequest } from "next/server"
 import { Controller } from "../Controller"
 import { LoginProfileType } from "../../context/LoginProfileContext"
 import AuthController from "../token/AuthController"
+import { DirectChatController } from "../chat/direct/DirectChatController"
 
 export default class UserController extends Controller {
 
@@ -59,7 +60,7 @@ export default class UserController extends Controller {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 34),
+                selectColumn: this.dq.columnSelector('users', 124),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
@@ -84,7 +85,19 @@ export default class UserController extends Controller {
                         result = await respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
-                        result = await this.loggedUser(action, selectResponse.data[0], req)
+                        // ### GET UNREAD MESSAGES
+                        // ### GET UNREAD MESSAGES
+                        const directChat = new DirectChatController()
+                        const encryptedData = await encryptData({text: JSON.stringify(selectResponse.data[0])})
+                        const getUnreadMessages = await directChat.unreadMessages('unread dms', {data: encryptedData})
+                        // if theres error on getting unread messages
+                        if(getUnreadMessages.status !== 200) return getUnreadMessages
+                        // remove to prevent last access not updating, the prop not required when login
+                        delete selectResponse.data[0].last_access
+                        // update last access & get profile
+                        result = await this.lastAccess(action, selectResponse.data[0], req)
+                        // combine user profile & unread messages
+                        result.data[0] = {...result.data[0], ...getUnreadMessages.data[0]}
                     }
                 }
             }
@@ -99,7 +112,7 @@ export default class UserController extends Controller {
         }
     }
 
-    async loggedUser(action: string, data: ILoginPayload, req?: NextRequest) {
+    async lastAccess(action: string, data: ILoginPayload, req?: NextRequest) {
         let result: IResponse
 
         try {
@@ -108,12 +121,12 @@ export default class UserController extends Controller {
             const queryObject: IQueryUpdate = {
                 table: 'users',
                 selectColumn: this.dq.columnSelector('users', 15),
-                whereColumn: 'username',
-                whereValue: data.username,
+                whereColumn: 'id',
+                whereValue: data.id,
                 get updateColumn() {
                     return { 
-                        updated_at: dateNow.toISOString()
-                    }
+                        last_access: data.last_access || dateNow.toISOString()
+                    } as ILoginPayload
                 }
             }
             // update data
@@ -138,11 +151,15 @@ export default class UserController extends Controller {
                     // get user profile
                     result = await this.getProfiles(action, updateResponse.data[0], req)
                 }
+                // only update case
+                else {
+                    result = await respond(200, `${action} success`, [])
+                }
             }
             // return response
             return result
         } catch (err) {
-            console.log(`error UserController loggedUser`)
+            console.log(`error UserController lastAccess`)
             console.log(err)
             // return response
             result = await respond(500, err.message, [])
@@ -199,6 +216,7 @@ export default class UserController extends Controller {
                     cookies().set('refreshToken', refreshToken, { 
                         path: '/',
                         domain: req.nextUrl.hostname,
+                        maxAge: 7776000,
                         httpOnly: true 
                     })
                     // add token to response data
@@ -290,7 +308,9 @@ export default class UserController extends Controller {
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token
                 cookies().delete('refreshToken')
-                // update user is_login
+                // ### update user last access
+                // ### update user last access
+                // response
                 result = await respond(204, action, [])
             }
             // return response

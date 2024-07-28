@@ -8,9 +8,20 @@ import { ListenerParameters } from "pubnub";
 
 export default function ChattingPage() {
     // chat with context
-    const { chatWith, messageItems, setMessageItems, setHistoryMessageLog } = useContext(ChatWithContext)
+    const { chatWith, messageItems, 
+        setMessageItems, setHistoryMessageLog, 
+        unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
     // login profile context
     const { isLogin } = useContext(LoginProfileContext)
+
+    // update unread message
+    if(unreadMessageItems) {
+        for(let user of unreadMessageItems) {
+            // remove unread message data from the user after read it
+            if(user.display_name === chatWith.display_name)
+                setUnreadMessageItems(data => data.filter(v => v.display_name !== chatWith.display_name))
+        }
+    }
 
     // message items scroll
     useEffect(() => {

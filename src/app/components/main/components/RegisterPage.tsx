@@ -1,8 +1,11 @@
-import { FormEvent } from "react";
+import { FormEvent, useContext } from "react";
 import { fetcher, formInputLength, qS, sha256 } from "../../helper";
 import { IRegisterPayload, IResponse } from "../../../types";
+import { DarkModeContext } from "../../../context/DarkModeContext";
 
-export default function RegisterPage({pageHandler}: {pageHandler: (page: string) => void}) {
+export default function RegisterPage() {
+    // get page for display
+    const { setDisplayPage } = useContext(DarkModeContext)
     return (
         <div className="
             mx-auto p-2 border-2 border-black rounded-md bg-green-500 dark:bg-green-600
@@ -52,7 +55,7 @@ export default function RegisterPage({pageHandler}: {pageHandler: (page: string)
                 <div className="grid grid-cols-2">
                     <button type="button" className="text-xl bg-slate-400 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"
                         id="return_home"
-                        onClick={() => pageHandler('home')}> Back </button>
+                        onClick={() => setDisplayPage('home')}> Back </button>
                     <button type="submit" className="text-xl bg-blue-500 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"> Register </button>
                 </div>
             </form>

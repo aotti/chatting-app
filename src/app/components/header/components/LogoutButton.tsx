@@ -33,6 +33,7 @@ async function logoutAccount(isLogin, setIsLogin) {
             setIsLogin([false, null])
             // remove access token
             window.localStorage.removeItem('accessToken')
+            window.localStorage.removeItem('lastAccess')
             break
         default: 
             console.log(logoutResponse.statusText);

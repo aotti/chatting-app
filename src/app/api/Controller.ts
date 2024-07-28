@@ -3,6 +3,7 @@ import { ILoggedUsers, LoggedUsersType } from "../types";
 import { DatabaseQueries } from "../config/DatabaseQueries";
 import AuthController from "./token/AuthController";
 import { encryptData } from "./helper";
+import { DirectChatController } from "./chat/direct/DirectChatController";
 
 // log users online
 let loggedUsers: ILoggedUsers[] = []

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { api_action, verifyUserTokens } from "../../helper";
-import { ChatController } from "../ChatController";
-import { IDirectChatPayload, IResponse } from "../../../types";
-import AuthController from "../../token/AuthController";
-import { cookies } from "next/headers";
+import { DirectChatController } from "./DirectChatController";
+import { IDirectChatPayload } from "../../../types";
 
-const chatController = new ChatController()
-const authController = new AuthController()
+const chatController = new DirectChatController()
 
 export async function GET(req: NextRequest) {
     // create api action
