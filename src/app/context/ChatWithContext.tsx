@@ -13,8 +13,8 @@ interface IChatWith {
     historyMessageLog: IMessage[];
     setHistoryMessageLog: Dispatch<SetStateAction<IMessage[]>>;
     // unread messages
-    unreadMessageItems: Record<'display_name'|'unread_messages', string>[];
-    setUnreadMessageItems: Dispatch<SetStateAction<Record<'display_name'|'message', string>[]>>;
+    unreadMessageItems: {display_name: string, unread_messages: string[]}[];
+    setUnreadMessageItems: Dispatch<SetStateAction<{display_name: string, unread_messages: string[]}[]>>;
 }
 
 export const ChatWithContext = createContext<IChatWith>({

@@ -3,7 +3,6 @@ import { ILoggedUsers, LoggedUsersType } from "../types";
 import { DatabaseQueries } from "../config/DatabaseQueries";
 import AuthController from "./token/AuthController";
 import { encryptData } from "./helper";
-import { DirectChatController } from "./chat/direct/DirectChatController";
 
 // log users online
 let loggedUsers: ILoggedUsers[] = []
@@ -40,6 +39,10 @@ export class Controller {
                 ...args.data,
                 token: loggedUserToken
             })
+            // filter logged users to prevent duplitcate data
+            const tempLoggedUsers = []
+            new Map(loggedUsers.map(v => [v['display_name'], v])).forEach(v => tempLoggedUsers.push(v))
+            loggedUsers = tempLoggedUsers
             // hash the logged users 
             const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
             console.log(args.action, {loggedUsers})

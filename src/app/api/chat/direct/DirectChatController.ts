@@ -36,7 +36,7 @@ export class DirectChatController extends Controller {
                 // pubnub
                 const publishMessage: IMessage['messages'][0] = {
                     style: 'justify-start',
-                    user: payload.user_me,
+                    user: payload.display_me,
                     text: JSON.parse(payload.message),
                     time: payload.time,
                     date: payload.date,
@@ -124,7 +124,7 @@ export class DirectChatController extends Controller {
         try {
             // decrypt payload
             const decryptedPayload = await decryptData({encryptedData: payload.data.replaceAll(' ', '+')})
-            const parsePayload = JSON.parse(decryptedPayload.match(/\{.*\}/)[0]) as Pick<ILoginPayload, 'id'|'last_access'>
+            const parsePayload = JSON.parse(decryptedPayload.match(/\{.*\}/)[0]) as Pick<ILoginPayload, 'id'|'display_name'|'last_access'>
             // filter payload
             const filteredPayload = await filter(action, parsePayload as ILoginPayload)
             if(filteredPayload.status === 400) {
@@ -147,6 +147,9 @@ export class DirectChatController extends Controller {
             }
             // success
             else if(selectResponse.error === null) {
+                // record logged in users
+                await this.alterLoggedUsers({action: 'push', data: {id: parsePayload.id, display_name: parsePayload.display_name}})
+                // response 
                 result = await respond(200, `${action} success`, [{ unread_messages: selectResponse.data }])
             }
             // return response

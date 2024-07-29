@@ -149,13 +149,14 @@ export async function getExpiredUsers(crypto: Record<'key'|'iv', string>, access
     }
 }
 
-export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, userId: string) {
+export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user: LoginProfileType) {
     // access token
     const token = window.localStorage.getItem('accessToken')
     const lastAccess = window.localStorage.getItem('lastAccess')
     // fetch stuff
     const unreadMessagesPayload = {
-        id: userId,
+        id: user.id,
+        display_name: user.display_name,
         last_access: lastAccess
     }
     const encryptedPayload = await encryptData({text: JSON.stringify(unreadMessagesPayload), key: crypto.key, iv: crypto.iv})

@@ -95,7 +95,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
 
     const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])
     
-    // verify access token
+    // auto login with token
     useEffect(() => {
         // get dark mode
         const getDarkMode = window.localStorage.getItem('darkMode')
@@ -109,9 +109,8 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         .then(async verifiedUser => {
             // token expired
             if(!verifiedUser) throw 'token expired'
-            // ### GET UNREAD MESSAGE BEFORE SET LOGIN
-            // ### GET UNREAD MESSAGE BEFORE SET LOGIN
-            const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType).id)
+            // get unread message
+            const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType))
             setUnreadMessageItems(unreadMessages)
             // set state
             setIsLogin([true, verifiedUser as LoginProfileType])
@@ -129,9 +128,8 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
                     // save token to local storage
                     window.localStorage.setItem('accessToken', getAccessToken)
-                    // ### GET UNREAD MESSAGE BEFORE SET LOGIN
-                    // ### GET UNREAD MESSAGE BEFORE SET LOGIN
-                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType).id)
+                    // get unread message
+                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType))
                     setUnreadMessageItems(unreadMessages)
                     // set state
                     setIsLogin([true, verifiedUser as LoginProfileType])
@@ -144,7 +142,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     break
             }
         })
-        return 
+        return () => null
     }, [])
     
     // get logged users
@@ -164,7 +162,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         pubnub.addListener(publishedUsersStatus)
         // unsub and remove listener
         return () => {
-            pubnub.unsubscribe({ channels: ['users-status'] })
+            pubnub.unsubscribe({ channels: ['logged-users'] })
             pubnub.removeListener(publishedUsersStatus)
         }
     }, [])
@@ -223,26 +221,29 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         
         const updateStatusAndLastAccess = async () => {
             updateUserStatus()
-            // // update user last access on client and db
-            // window.localStorage.setItem('lastAccess', new Date().toISOString())
-            // // ### fetch for update
-            // // ### fetch for update
-            // if(!isLogin[1]) return
-            // const accessToken = window.localStorage.getItem('accessToken')
-            // const lastAccess = window.localStorage.getItem('lastAccess')
-            // const fetchOptions: RequestInit = {
-            //     method: 'PATCH',
-            //     headers: {
-            //         'authorization': `Bearer ${accessToken}`
-            //     },
-            //     body: JSON.stringify({
-            //         id: isLogin[1].id,
-            //         last_access: lastAccess
-            //     })
-            // }
-            // const lastAccessResponse: IResponse = await (await fetcher('/user/lastaccess', fetchOptions)).json()
-            // console.log({lastAccessResponse});
-            
+            // update user last access on client
+            window.localStorage.setItem('lastAccess', new Date().toISOString())
+            // if user not logged in, return
+            if(!isLogin[1]) return
+            // fetch to update last access on db
+            const accessToken = window.localStorage.getItem('accessToken')
+            const lastAccess = window.localStorage.getItem('lastAccess')
+            const fetchOptions: RequestInit = {
+                method: 'PATCH',
+                headers: {
+                    'authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    id: isLogin[1].id,
+                    last_access: lastAccess
+                })
+            }
+            const lastAccessResponse: IResponse = await (await fetcher('/user/lastaccess', fetchOptions)).json()
+            switch(lastAccessResponse.status) {
+                case 200: break
+                default: 
+                    console.log({lastAccessResponse})
+            }
         }
 
         document.addEventListener('click', updateUserStatus)

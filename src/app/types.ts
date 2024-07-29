@@ -170,6 +170,7 @@ interface IDirectChat {
 }
 
 interface IDirectChatPayload extends IDirectChat {
+    display_me: string;
     message: string;
     time: string;
     date: string;

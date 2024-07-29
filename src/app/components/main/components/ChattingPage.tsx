@@ -1,10 +1,10 @@
-import { Dispatch, FormEvent, SetStateAction, useContext, useEffect, useState } from "react";
+import { Dispatch, FormEvent, SetStateAction, useContext, useEffect } from "react";
 import { ChatWithContext } from "../../../context/ChatWithContext";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
 import { IDirectChatPayload, IMessage, IResponse } from "../../../types";
 import { addMessageItem, fetcher, qS, qSA } from "../../helper";
-import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
+import { usePubNub } from "pubnub-react";
 
 export default function ChattingPage() {
     // chat with context
@@ -15,13 +15,15 @@ export default function ChattingPage() {
     const { isLogin } = useContext(LoginProfileContext)
 
     // update unread message
-    if(unreadMessageItems) {
-        for(let user of unreadMessageItems) {
-            // remove unread message data from the user after read it
-            if(user.display_name === chatWith.display_name)
-                setUnreadMessageItems(data => data.filter(v => v.display_name !== chatWith.display_name))
+    useEffect(() => {
+        if(unreadMessageItems) {
+            for(let user of unreadMessageItems) {
+                // remove unread message data from the user after read it
+                if(user.display_name === chatWith.display_name)
+                    setUnreadMessageItems(data => data.filter(v => v.display_name !== chatWith.display_name))
+            }
         }
-    }
+    }, [unreadMessageItems])
 
     // message items scroll
     useEffect(() => {
@@ -32,6 +34,7 @@ export default function ChattingPage() {
 
     // pubnub
     const pubsub = usePubNub()
+    // FOR CHAT AND UNREAD MESSAGES
     useEffect(() => {
         // subscribe
         const dmChannel = `DirectChat-${isLogin[1].id}`
@@ -40,13 +43,45 @@ export default function ChattingPage() {
         const publishedMessage: ListenerParameters =  {
             message: (data) => {
                 const newMessage: IMessage['messages'][0] = data.message
-                // user is id
                 // only get other message
-                if(newMessage.user === isLogin[1].id) return
+                if(newMessage.user === isLogin[1].display_name) return
                 // make sure chat with the current opened chat user 
-                if(newMessage.user !== chatWith.id) return
-                // change user id to display name
-                newMessage.user = chatWith.display_name
+                // add the chat to unread messages
+                if(newMessage.user !== chatWith.display_name) {
+                    return setUnreadMessageItems(data => {
+                        // data > 0
+                        if(data) {
+                            const isUserExist = data.map(v => v.display_name).indexOf(newMessage.user)
+                            // still have unread message from this user
+                            if(isUserExist !== -1) {
+                                const newData = [
+                                    ...data, 
+                                    {
+                                        display_name: newMessage.user, 
+                                        unread_messages: [...data[isUserExist].unread_messages, newMessage.text]
+                                    }
+                                ]
+                                // filter duplicate object
+                                const filterNewData = []
+                                new Map(newData.map(v => [v['display_name'], v])).forEach(v => filterNewData.push(v))
+                                return filterNewData
+                            }
+                            // no unread message from the user
+                            else {
+                                const newData = [...data, {display_name: newMessage.user, unread_messages: [newMessage.text]}]
+                                return newData
+                            }
+                        }
+                        // data still null
+                        else {
+                            const newData = [{
+                                display_name: newMessage.user,
+                                unread_messages: [newMessage.text]
+                            }]
+                            return newData
+                        }
+                    })
+                }
                 // messages data
                 const tempMessages: IMessage['messages'][0] = {
                     user: newMessage.user,
@@ -56,17 +91,17 @@ export default function ChattingPage() {
                     date: newMessage.date,
                     created_at: newMessage.created_at
                 }
-                // add message from other
-                setMessageItems(data => [...data, tempMessages])
+                // add message from other, only add message if data != null
+                setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
             }
         }
         pubsub.addListener(publishedMessage)
         // unsub and remove listener
         return () => {
-            pubsub.unsubscribe({ channels: ['chatting-app'] })
+            pubsub.unsubscribe({ channels: [dmChannel] })
             pubsub.removeListener(publishedMessage)
         }
-    }, [])
+    }, [chatWith])
 
     return (
         <div className="grid grid-rows-8 h-screen p-2">
@@ -196,6 +231,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement>, userFrom: LoginProfileTy
     const formData: IDirectChatPayload = {
         // author is user_id
         user_me: userFrom.id,
+        display_me: userFrom.display_name,
         user_with: userTo.id,
         message: JSON.stringify(formInputs[0].value),
         time: messageTime,

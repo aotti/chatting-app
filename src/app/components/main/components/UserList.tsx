@@ -119,8 +119,6 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
                 // push to new history message
                 setHistoryMessageLog(data => addMessageItem(data, userMe, userWith, tempMessages))
             }
-            console.log(historyResponse.data);
-            
             break
         default: 
             console.log(historyResponse)
