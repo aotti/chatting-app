@@ -120,8 +120,8 @@ export default function ChattingPage() {
                 {
                     messageItems
                         ? <Messages historyMessages={messageItems} />
-                        // ### loading jadi tampilan kosong + tanggal
-                        : <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll"> Loading... </div>
+                        // if null, show empty chat box
+                        : <Messages historyMessages={messageItems} firstMessage={true} />
                 }
             </div>
             {/* send message box */}
