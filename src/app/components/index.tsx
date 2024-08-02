@@ -6,7 +6,7 @@ import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
 import { fetcher, getExpiredUsers, getUnreadMessages, verifyAccessToken } from "./helper"
 import { IMessage, IResponse, IUserTimeout } from "../types"
-import { DarkModeContext } from "../context/DarkModeContext"
+import { MiscContext } from "../context/MiscContext"
 import { UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
 import FooterContent from "./footer/FooterContent"
@@ -31,12 +31,16 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     const [darkMode, setDarkMode] = useState(false)
     // get page for display
     const [displayPage, setDisplayPage] = useState('home')
+    // loading state
+    const [isLoading, setIsLoading] = useState(true)
     // dark mode props
     const darkModeStates = {
         darkMode: darkMode,
         setDarkMode: setDarkMode,
         displayPage: displayPage,
-        setDisplayPage: setDisplayPage
+        setDisplayPage: setDisplayPage,
+        isLoading: isLoading,
+        setIsLoading: setIsLoading
     }
 
     // main-SearchBox
@@ -81,6 +85,8 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     const [historyMessageLog, setHistoryMessageLog] = useState<IMessage[]>([])
     // unread message
     const [unreadMessageItems, setUnreadMessageItems] = useState(null)
+    // unread animation
+    const [unreadAnimate, setUnreadAnimate] = useState(false)
     // chat with states
     const chatWithStates = {
         chatWith: chatWith,
@@ -90,7 +96,9 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         historyMessageLog: historyMessageLog,
         setHistoryMessageLog: setHistoryMessageLog,
         unreadMessageItems: unreadMessageItems,
-        setUnreadMessageItems: setUnreadMessageItems
+        setUnreadMessageItems: setUnreadMessageItems,
+        unreadAnimate: unreadAnimate,
+        setUnreadAnimate: setUnreadAnimate
     }
 
     const [userTimeout, setUserTimeout] = useState<IUserTimeout[]>([])
@@ -103,7 +111,10 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         setDarkMode(JSON.parse(getDarkMode))
         const getAccessToken = window.localStorage.getItem('accessToken')
         // is exist
-        if(!getAccessToken) return
+        if(!getAccessToken) {
+            // stop loading page
+            return setIsLoading(false)
+        }
         // verify token
         verifyAccessToken(getAccessToken, accessSecret)
         .then(async verifiedUser => {
@@ -138,6 +149,8 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     // remove access token & last access if fail to renew
                     window.localStorage.removeItem('accessToken')
                     window.localStorage.removeItem('lastAccess')
+                    // stop loading page
+                    setIsLoading(false)
                     console.log(renewAccessToken)
                     break
             }
@@ -260,7 +273,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
     // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
     return (
-        <DarkModeContext.Provider value={ darkModeStates }>
+        <MiscContext.Provider value={ darkModeStates }>
             <LoginProfileContext.Provider value={ loginProfileStates }>
                 <UsersFoundContext.Provider value={ usersFoundStates }>
                     <ChatWithContext.Provider value={ chatWithStates }>
@@ -285,6 +298,6 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     </ChatWithContext.Provider>
                 </UsersFoundContext.Provider>
             </LoginProfileContext.Provider>
-        </DarkModeContext.Provider>
+        </MiscContext.Provider>
     )
 }

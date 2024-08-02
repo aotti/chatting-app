@@ -15,6 +15,9 @@ interface IChatWith {
     // unread messages
     unreadMessageItems: {display_name: string, unread_messages: string[]}[];
     setUnreadMessageItems: Dispatch<SetStateAction<{display_name: string, unread_messages: string[]}[]>>;
+    // unread animation
+    unreadAnimate: boolean;
+    setUnreadAnimate: Dispatch<SetStateAction<boolean>>;
 }
 
 export const ChatWithContext = createContext<IChatWith>({
@@ -25,5 +28,7 @@ export const ChatWithContext = createContext<IChatWith>({
     historyMessageLog: null,
     setHistoryMessageLog: () => null,
     unreadMessageItems: null,
-    setUnreadMessageItems: () => null
+    setUnreadMessageItems: () => null,
+    unreadAnimate: null,
+    setUnreadAnimate: () => null
 })

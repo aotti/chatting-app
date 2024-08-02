@@ -20,6 +20,7 @@
     "formidable": "^2.1.2",
     "jose": "^5.3.0",
     "next": "^14.2.3",
+    "next-cloudinary": "^6.6.2",
     "pubnub": "^7.6.3",
     "pubnub-react": "^3.0.2",
     "react": "^18.3.1",

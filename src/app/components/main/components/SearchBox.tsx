@@ -23,7 +23,7 @@ export function SearchBox() {
     )
 }
 
-async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
+export async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound, setChatWith = null, username = null) {
     ev.preventDefault()
 
     // access token
@@ -32,7 +32,7 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
     const errorMessage = qS('#search_message')
     // form inputs
     // filter button elements
-    const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
+    const formInputs = username ? [{value: username}] : ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
     // get username input
     const usernameInput = formInputs[0].value
     // search user
@@ -55,6 +55,11 @@ async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFound) {
                 window.localStorage.setItem('accessToken', searchResponse.data[0].token)
                 // delete token array
                 delete searchResponse.data[0].token
+            }
+            // get chat with (open unread message)
+            if(username) {
+                setChatWith(searchResponse.data[0])
+                return searchResponse.data[0]
             }
             // set users found state
             setUsersFound(searchResponse.data)

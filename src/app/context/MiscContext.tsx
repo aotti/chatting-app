@@ -1,16 +1,20 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 
 // ### TAMBAH PAGE HANDLER
-interface iDarkModeStates {
+interface IMiscStates {
     darkMode: boolean;
     setDarkMode: Dispatch<SetStateAction<boolean>>;
     displayPage: string;
     setDisplayPage: Dispatch<SetStateAction<string>>;
+    isLoading: boolean;
+    setIsLoading: Dispatch<SetStateAction<boolean>>;
 }
 
-export const DarkModeContext = createContext<iDarkModeStates>({
+export const MiscContext = createContext<IMiscStates>({
     darkMode: null,
     setDarkMode: () => null,
     displayPage: null,
-    setDisplayPage: () => null
+    setDisplayPage: () => null,
+    isLoading: null,
+    setIsLoading: () => null
 })

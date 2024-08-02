@@ -1,11 +1,11 @@
 import { FormEvent, useContext } from "react";
 import { fetcher, formInputLength, qS, sha256 } from "../../helper";
 import { IRegisterPayload, IResponse } from "../../../types";
-import { DarkModeContext } from "../../../context/DarkModeContext";
+import { MiscContext } from "../../../context/MiscContext";
 
 export default function RegisterPage() {
     // get page for display
-    const { setDisplayPage } = useContext(DarkModeContext)
+    const { setDisplayPage } = useContext(MiscContext)
     return (
         <div className="
             mx-auto p-2 border-2 border-black rounded-md bg-green-500 dark:bg-green-600

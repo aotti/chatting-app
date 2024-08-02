@@ -1,29 +1,49 @@
 import { useContext, useEffect } from "react"
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
-import { DarkModeContext } from "../../../context/DarkModeContext"
+import { MiscContext } from "../../../context/MiscContext"
 import { ChatWithContext } from "../../../context/ChatWithContext"
 import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
 import { IMessage } from "../../../types";
+import { searchUsername } from "./SearchBox";
+import { historyChat } from "./UserList";
+import { UsersFoundContext } from "../../../context/UsersFoundContext";
+import LoadingPage from "../../loading";
 
-export default function HomePage() {
-    // get page for display
-    const { setDisplayPage } = useContext(DarkModeContext)
+export default function HomePage({ crypto }) {
+    // get page for display & loading
+    const { setDisplayPage, isLoading, setIsLoading } = useContext(MiscContext)
     // login state
     const { isLogin } = useContext(LoginProfileContext)
+    // check login changes
+    useEffect(() => {
+        if(isLogin[0]) setIsLoading(false)
+    }, [isLogin])
 
     return (
-        isLogin[0]
-            ? <LoginTrue loginData={isLogin[1]} />
-            : <LoginFalse setDisplayPage={setDisplayPage} /> 
+        isLoading
+            ? <LoadingPage />
+            : isLogin[0]
+                ? <LoginTrue loginData={isLogin[1]} crypto={crypto} />
+                : <LoginFalse setDisplayPage={setDisplayPage} /> 
     )
 }
 
-function LoginTrue({ loginData }: {loginData: LoginProfileType}) {
+function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: Record<'key'|'iv', string>}) {
+    // display page state
+    const { setDisplayPage, setIsLoading } = useContext(MiscContext)
     // islogin state
     const { isLogin } = useContext(LoginProfileContext)
     // chat with & unread message state
-    const { chatWith, setMessageItems, unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
+    const { setChatWith, setMessageItems, historyMessageLog, setHistoryMessageLog, unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
+    const historyChatStates = {
+        setMessageItems: setMessageItems,
+        historyMessageLog: historyMessageLog,
+        setHistoryMessageLog: setHistoryMessageLog,
+        setIsLoading: setIsLoading
+    }
+    // users found context
+    const { setUsersFound } = useContext(UsersFoundContext)
 
     // pubnub
     const pubsub = usePubNub()
@@ -93,8 +113,17 @@ function LoginTrue({ loginData }: {loginData: LoginProfileType}) {
                     {
                         unreadMessageItems.map((v, i) => {
                             return (
-                                <div key={i}>
-                                    <span> {`${v['display_name']} - ${v['unread_messages'].length} messages`} </span>
+                                <div className="mb-2" key={i}>
+                                    <span> {`${v.display_name} - ${v.unread_messages.length} messages`} </span>
+                                    <button className="dark:text-lime-300 text-pink-600 font-semibold" onClick={async (ev) => {
+                                        setIsLoading(true)
+                                        // find user
+                                        const getChatWith = await searchUsername(ev as any, setUsersFound, setChatWith, v.display_name);
+                                        // get history message
+                                        await historyChat(isLogin[1], getChatWith, crypto, historyChatStates)
+                                        // display chat box
+                                        setDisplayPage('chatting');
+                                    }}> {'[read]'} </button>
                                 </div>
                             )
                         })

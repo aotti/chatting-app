@@ -1,11 +1,11 @@
-import { Dispatch, SetStateAction, useContext, useState } from "react"
+import { Dispatch, SetStateAction, useContext } from "react"
 import { UsersFoundContext } from "../../../context/UsersFoundContext"
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
 import { ChatWithContext } from "../../../context/ChatWithContext"
 import { IHistoryMessagePayload, IMessage, IResponse } from "../../../types"
 import { encryptData } from "../../../api/helper"
 import { addMessageItem, fetcher } from "../../helper"
-import { DarkModeContext } from "../../../context/DarkModeContext"
+import { MiscContext } from "../../../context/MiscContext"
 
 interface IUserList {
     crypto: Record<'key'|'iv', string>
@@ -13,11 +13,17 @@ interface IUserList {
 
 export default function UserList({ crypto }: IUserList) {
     // get page for display
-    const { setDisplayPage } = useContext(DarkModeContext)
+    const { setDisplayPage, setIsLoading } = useContext(MiscContext)
     // login profile context
     const { isLogin, setShowOtherProfile } = useContext(LoginProfileContext)
     // chat with context
     const { setChatWith, setMessageItems, historyMessageLog, setHistoryMessageLog } = useContext(ChatWithContext)
+    const historyChatStates: IHistoryChat = {
+        setMessageItems: setMessageItems,
+        historyMessageLog: historyMessageLog,
+        setHistoryMessageLog: setHistoryMessageLog,
+        setIsLoading: setIsLoading
+    }
     // users found context
     const { usersFound } = useContext(UsersFoundContext)
 
@@ -46,9 +52,10 @@ export default function UserList({ crypto }: IUserList) {
                                 {/* chat button */}
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
+                                        setIsLoading(true)
                                         startChat(isLogin, setChatWith, user, setDisplayPage);
                                         if(isLogin[1])
-                                            await historyChat(isLogin[1], user, crypto, setMessageItems, historyMessageLog, setHistoryMessageLog);
+                                            await historyChat(isLogin[1], user, crypto, historyChatStates);
                                     }}>
                                     <img src="./img/send.png" alt="chat" width={30} />
                                 </button>
@@ -69,7 +76,14 @@ function startChat(isLogin, setChatWith, user, setDisplayPage) {
 }
 
 type MessageType<T> = Dispatch<SetStateAction<T>>
-async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: IUserList['crypto'], setMessageItems: MessageType<IMessage['messages']>, historyMessageLog: IMessage[], setHistoryMessageLog: MessageType<IMessage[]>) {
+interface IHistoryChat {
+    setMessageItems: MessageType<IMessage['messages']>;
+    historyMessageLog: IMessage[];
+    setHistoryMessageLog: MessageType<IMessage[]>;
+    setIsLoading: MessageType<boolean>;
+}
+export async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: IUserList['crypto'], historyChatStates: IHistoryChat) {
+    const { setMessageItems, historyMessageLog, setHistoryMessageLog, setIsLoading } = historyChatStates
     // set message items to NULL each time open Direct Message
     setMessageItems(null)
     // check new history message to prevent fetching too much to database
@@ -112,13 +126,15 @@ async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType,
                     time: new Date(hrd.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
                     date: new Date(hrd.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'}),
                     created_at: hrd.created_at
-                    // ### updated_at later
+                    // ### updated_at later for edit message
                 }
                 // set message items for current chat
                 setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
                 // push to new history message
                 setHistoryMessageLog(data => addMessageItem(data, userMe, userWith, tempMessages))
             }
+            // end the loading page
+            setIsLoading(false)
             break
         default: 
             console.log(historyResponse)

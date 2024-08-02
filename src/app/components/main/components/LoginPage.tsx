@@ -2,12 +2,12 @@ import { FormEvent, useContext } from "react";
 import { fetcher, formInputLength, modifyUnreadMessages, qS, sha256 } from "../../helper";
 import { ILoginPayload, IResponse } from "../../../types";
 import { LoginProfileContext } from "../../../context/LoginProfileContext";
-import { DarkModeContext } from "../../../context/DarkModeContext";
+import { MiscContext } from "../../../context/MiscContext";
 import { ChatWithContext } from "../../../context/ChatWithContext";
 
 export default function LoginPage() {
     // get page for display
-    const { setDisplayPage } = useContext(DarkModeContext)
+    const { setDisplayPage } = useContext(MiscContext)
     // login set state
     const { setIsLogin } = useContext(LoginProfileContext)
     // unread message state

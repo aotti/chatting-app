@@ -9,3 +9,45 @@
 button {
     @apply active:opacity-70
 }
+
+.animate-number {
+    animation: number .3s linear;
+}
+@keyframes number {
+    from {
+        font-size: 1.75rem;
+    }
+    to {
+        font-size: 1.125rem;
+    }
+}
+
+.animate-shadow-l {
+    animation: shadowLight .3s linear;
+}
+/* light mode */
+@keyframes shadowLight {
+    from {
+        border-radius: 5px;
+        box-shadow: 0 0 25px inset #ff9c32;
+    }
+    to {
+        border-radius: 5px;
+        box-shadow: 0;
+    }
+}
+
+.animate-shadow-d {
+    animation: shadowDark .3s linear;
+}
+/* dark mode */
+@keyframes shadowDark {
+    from {
+        border-radius: 5px;
+        box-shadow: 0 0 25px inset #0284c7;
+    }
+    to {
+        border-radius: 5px;
+        box-shadow: 0;
+    }
+}

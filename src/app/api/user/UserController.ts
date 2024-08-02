@@ -85,8 +85,7 @@ export default class UserController extends Controller {
                         result = await respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
-                        // ### GET UNREAD MESSAGES
-                        // ### GET UNREAD MESSAGES
+                        // get unread message
                         const directChat = new DirectChatController()
                         const encryptedData = await encryptData({text: JSON.stringify(selectResponse.data[0])})
                         const getUnreadMessages = await directChat.unreadMessages('unread dms', {data: encryptedData})

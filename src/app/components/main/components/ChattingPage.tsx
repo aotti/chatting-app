@@ -5,8 +5,12 @@ import { IDirectChatPayload, IMessage, IResponse } from "../../../types";
 import { addMessageItem, fetcher, qS, qSA } from "../../helper";
 import { ListenerParameters } from "pubnub";
 import { usePubNub } from "pubnub-react";
+import { MiscContext } from "../../../context/MiscContext";
+import LoadingPage from "../../loading";
 
 export default function ChattingPage() {
+    // get page for display
+    const { isLoading } = useContext(MiscContext)
     // chat with context
     const { chatWith, messageItems, 
         setMessageItems, setHistoryMessageLog, 
@@ -29,7 +33,7 @@ export default function ChattingPage() {
     useEffect(() => {
         // scroll to bottom
         const messageContainer = qS('#messageContainer')
-        messageContainer.scrollTo({top: messageContainer.scrollHeight})
+        if(messageContainer) messageContainer.scrollTo({top: messageContainer.scrollHeight})
     }, [messageItems])
 
     // pubnub
@@ -118,10 +122,12 @@ export default function ChattingPage() {
             {/* chat box */}
             <div className="flex items-end row-span-6 border-b border-t">
                 {
-                    messageItems
-                        ? <Messages historyMessages={messageItems} />
-                        // if null, show empty chat box
-                        : <Messages historyMessages={messageItems} firstMessage={true} />
+                    isLoading
+                        ? <LoadingPage />
+                        : messageItems
+                            ? <Messages historyMessages={messageItems} />
+                            // if null, show empty chat box
+                            : <Messages historyMessages={messageItems} firstMessage={true} />
                 }
             </div>
             {/* send message box */}

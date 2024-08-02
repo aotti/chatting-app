@@ -9,11 +9,11 @@ import UserList from "./components/UserList"
 import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
 import { LoginProfileContext } from "../../context/LoginProfileContext"
-import { DarkModeContext } from "../../context/DarkModeContext"
+import { MiscContext } from "../../context/MiscContext"
 
 export default function MainContent({ crypto }) {
     // get page for display
-    const { displayPage } = useContext(DarkModeContext)
+    const { displayPage } = useContext(MiscContext)
     // display user list
     const [showUserList, setShowUserList] = useState(false)
     // login profile state
@@ -70,7 +70,7 @@ export default function MainContent({ crypto }) {
                                     ? <RegisterPage />
                                     : displayPage == 'login'
                                         ? <LoginPage />
-                                        : <HomePage />
+                                        : <HomePage crypto={crypto} />
                         }
                     </div>
                 </div>

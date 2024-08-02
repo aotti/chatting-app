@@ -2,7 +2,7 @@
 
 import { useContext, useRef, useState } from "react";
 import { clickOutsideElement } from "../../helper-click";
-import { DarkModeContext } from "../../../context/DarkModeContext";
+import { MiscContext } from "../../../context/MiscContext";
 import { LoginProfileContext } from "../../../context/LoginProfileContext";
 import LogoutButton from "./LogoutButton";
 
@@ -42,7 +42,7 @@ function MenuItem({ setIsMenuOpen }) {
     // login profile context
     const { isLogin, setShowMyProfile } = useContext(LoginProfileContext)
     // dark mode toggle
-    const { darkMode, setDarkMode } = useContext(DarkModeContext)
+    const { darkMode, setDarkMode } = useContext(MiscContext)
 
     return (
         <ul className="border-2 border-black bg-blue-400 dark:bg-orange-600">
