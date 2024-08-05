@@ -47,6 +47,8 @@ interface IQueryUpdate extends IQueryBuilder {
         IRegister |
         // login
         ILogin |
+        // profile
+        IProfile |
         // direct chat
         IDirectChat
 }
@@ -136,6 +138,7 @@ interface IProfile {
         display_name: string;
     }
     description?: string;
+    photo?: string;
 }
 
 /**

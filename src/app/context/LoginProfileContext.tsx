@@ -1,7 +1,7 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 import { IProfilePayload } from "../types";
 
-export type LoginProfileType = Pick<IProfilePayload, 'description'> & Omit<IProfilePayload['user_id'], 'username'>
+export type LoginProfileType = Pick<IProfilePayload, 'description'|'photo'> & Omit<IProfilePayload['user_id'], 'username'>
 
 interface ILoginProfileStates {
     // user login state

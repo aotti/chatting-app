@@ -108,7 +108,7 @@ export class DatabaseQueries {
      * 
      * list of column:
      * - users - id | last_access | username | password | display_name | created_at | updated_at | deleted_at
-     * - profiles - id | user_id (id, username, display_name) | description | created_at | updated_at | deleted_at
+     * - profiles - id | user_id (id, display_name) | description | photo | updated_at | deleted_at
      * - messages - 
      * - direct_chats - id | user_from | user_to | message_id (user_id, message, created_at, updated_at)
      * - group_chats - 
@@ -125,7 +125,7 @@ export class DatabaseQueries {
         }
         // for profiles table
         else if(type === 'profiles') {
-            const pickerList: string[] = ['id', 'user_id(id, username, display_name)', 'description', 'created_at', 'updated_at', 'deleted_at']
+            const pickerList: string[] = ['id', 'user_id(id, display_name)', 'description', 'photo', 'updated_at', 'deleted_at']
             selectedColumns.push(columnPicker(pickerList))
         }
         // for messages table

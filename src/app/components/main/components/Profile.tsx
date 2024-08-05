@@ -1,11 +1,15 @@
-import { useContext, useRef } from "react"
+import { Dispatch, SetStateAction, useContext, useRef } from "react"
 import { clickOutsideElement } from "../../helper-click";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
+import { CldImage, CldUploadButton } from "next-cloudinary";
+import { randomBytes } from "crypto";
+import { IResponse } from "../../../types";
+import { fetcher, qS } from "../../helper";
 
 export default function Profile({ profileClassName, userData }: { profileClassName: string, userData: LoginProfileType }) {
     // login profile state
-    const { setShowMyProfile, showOtherProfile, setShowOtherProfile } = useContext(LoginProfileContext)
-    // ref 
+    const { isLogin, setIsLogin, setShowMyProfile, showOtherProfile, setShowOtherProfile } = useContext(LoginProfileContext)
+    // profile ref 
     const profileRef = useRef(null)
     // click outside profile
     clickOutsideElement(profileRef, () => setShowMyProfile(false))
@@ -27,8 +31,39 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
                 { profileClassName.includes('absolute') ? `My Profile (${userData.display_name})` : `Profile (${userData.display_name})` }
             </p>
             {/* profile picture */}
-            <div className=" w-36 h-36 border-2">
-                <img src="" alt="pic 144x144" />
+            <div className="flex gap-2">
+                <CldImage alt="pic 160x160" className="border-2" width={160} height={160} 
+                    src={isLogin[0] 
+                            ? isLogin[1].photo 
+                            : userData && userData.photo
+                                ? userData.photo
+                                : 'data:,'
+                        } 
+                />
+                { 
+                    isLogin[0] && userData.id === isLogin[1].id 
+                        ? <div className="self-center">
+                            <div className="mb-2">
+                                <p id="uploadPhotoResponse" className="font-semibold"></p>
+                                <span> max. 2mb <br /> jpg, png </span>
+                                <span className="text-xs border rounded-full p-0.5" tabIndex={0}
+                                    title="if the image doesnt display, try re-login"> 
+                                    ❔ 
+                                </span>
+                            </div>
+                            <CldUploadButton className="bg-sky-600 h-fit p-2 rounded-lg" 
+                                signatureEndpoint="/api/user/photo" 
+                                options={{
+                                    sources: ['local'], publicId:`profile_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
+                                    multiple: false, maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
+                                    cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
+                                    croppingAspectRatio: 1, croppingShowDimensions: true
+                                }} 
+                                onSuccess={(result, {widget}) => uploadProfilePhoto(result, widget, isLogin[1].id, setIsLogin)}
+                            />
+                        </div>
+                        : null
+                }
             </div>
             {/* status */}
             <div className="font-semibold">
@@ -44,4 +79,41 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
             </div>
         </div>
     )
+}
+
+async function uploadProfilePhoto(result, widget, userId: string, setIsLogin) {
+    // set new profile photo
+    setIsLogin(data => {
+        data[1].photo = result.info.public_id
+        return data
+    })
+    widget.close()
+    // access token
+    const token = window.localStorage.getItem('accessToken')
+    // update photo to db
+    const photoFetchOptions: RequestInit = {
+        method: 'PATCH',
+        headers: {
+            'authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            user_id: {id: userId},
+            photo: result.info.public_id
+        })
+    }
+    // fetching
+    const photoResponse: IResponse = await (await fetcher('/user/photo', photoFetchOptions)).json()
+    console.log(photoResponse);
+    
+    // response
+    switch(photoResponse.status) {
+        case 200: 
+            qS('#uploadPhotoResponse').textContent = 'photo updated!'
+            setTimeout(() => {
+                qS('#uploadPhotoResponse').textContent = ''
+            }, 3000);
+            break
+        default: 
+            console.log({photoResponse})
+    }
 }

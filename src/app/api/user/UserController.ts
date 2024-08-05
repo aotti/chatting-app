@@ -179,7 +179,7 @@ export default class UserController extends Controller {
             const queryObject: IQuerySelect = payload.id
                 ? {
                     table: 'profiles',
-                    selectColumn: this.dq.columnSelector('profiles', 23),
+                    selectColumn: this.dq.columnSelector('profiles', 234),
                     whereColumn: 'user_id',
                     whereValue: payload.id
                 }
@@ -201,11 +201,13 @@ export default class UserController extends Controller {
                 let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
                 // login case
                 if(selectResponse.data[0]?.user_id?.username) {
+                    const { user_id, description, photo } = selectResponse.data[0]
                     newSelectResData = [{
-                        id: selectResponse.data[0].user_id.id,
-                        display_name: selectResponse.data[0].user_id.display_name,
+                        id: user_id.id,
+                        display_name: user_id.display_name,
                         is_login: 'Online',
-                        description: selectResponse.data[0].description
+                        description: description,
+                        photo: photo
                     }]
                     // create access token 
                     const accessToken = await this.auth.generateAccessToken(newSelectResData[0])
@@ -215,7 +217,7 @@ export default class UserController extends Controller {
                     cookies().set('refreshToken', refreshToken, { 
                         path: '/',
                         domain: req.nextUrl.hostname,
-                        maxAge: 7776000,
+                        maxAge: 7776000, // 3 months
                         httpOnly: true 
                     })
                     // add token to response data
@@ -278,6 +280,49 @@ export default class UserController extends Controller {
         }
     }
 
+    async updateProfile(action: string, payload: IProfilePayload) {
+        let result: IResponse
+        // filter payload
+        const filteredPayload = await filter(action, payload as IProfilePayload)
+        if(filteredPayload.status === 400) {
+            return filteredPayload
+        }
+
+        try {
+            // object to run query
+            const queryObject: IQueryUpdate = {
+                table: 'profiles',
+                selectColumn: this.dq.columnSelector('profiles', 24),
+                whereColumn: 'user_id',
+                whereValue: payload.user_id.id,
+                get updateColumn() {
+                    return {
+                        photo: payload.photo,
+                        updated_at: new Date().toISOString()
+                    }
+                }
+            }
+            // update data
+            const updateResponse = await this.dq.update<IProfilePayload>(queryObject)
+            // fail 
+            if(updateResponse.data === null) {
+                result = await respond(500, updateResponse.error, [])
+            }
+            // success
+            else if(updateResponse.error === null) {
+                result = await respond(200, `${action} success`, updateResponse.data)
+            }
+            // return response
+            return result
+        } catch (err) {
+            console.log(`error UserController updateProfile`)
+            console.log(err)
+            // return response
+            result = await respond(500, err.message, [])
+            return result
+        }
+    }
+
     async logout(action: string, payload: Pick<ILoginPayload, 'id'>) {
         let result: IResponse
         // filter payload
@@ -307,8 +352,6 @@ export default class UserController extends Controller {
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token
                 cookies().delete('refreshToken')
-                // ### update user last access
-                // ### update user last access
                 // response
                 result = await respond(204, action, [])
             }
