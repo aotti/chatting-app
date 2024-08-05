@@ -7,6 +7,7 @@ import { ListenerParameters } from "pubnub";
 import { usePubNub } from "pubnub-react";
 import { MiscContext } from "../../../context/MiscContext";
 import LoadingPage from "../../loading";
+import { CldImage } from "next-cloudinary";
 
 export default function ChattingPage() {
     // get page for display
@@ -106,13 +107,17 @@ export default function ChattingPage() {
             pubsub.removeListener(publishedMessage)
         }
     }, [chatWith])
+    // profile photo
+    let photoSrc = 'data:,' 
+    if(isLogin[0] && isLogin[1].id === chatWith.id && isLogin[1].photo) photoSrc = isLogin[1].photo
+    else if(chatWith && chatWith.photo) photoSrc = chatWith.photo
 
     return (
         <div className="grid grid-rows-8 h-screen p-2">
             {/* user */}
             <div className="flex justify-center gap-4 p-2">
-                <div className="rounded-full border w-20 md:w-16 ">
-                    <img src="" alt="pfp"/>
+                <div className={photoSrc == 'data:,' ? 'rounded-full border' : ''}>
+                    <CldImage src={photoSrc} alt="pfp" width={64} height={64} radius={'max'}/>
                 </div>
                 <div className="">
                     <p> {chatWith.display_name} </p>

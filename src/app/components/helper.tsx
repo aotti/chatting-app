@@ -55,7 +55,8 @@ export async function verifyAccessToken(token: string, accessSecret: string, onl
             id: verifyToken.payload.id,
             display_name: verifyToken.payload.display_name,
             is_login: verifyToken.payload.is_login,
-            description: verifyToken.payload.description
+            description: verifyToken.payload.description,
+            photo: verifyToken.payload.photo
         }
         return verifiedUser
     } catch (error) {

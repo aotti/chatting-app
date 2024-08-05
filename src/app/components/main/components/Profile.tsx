@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useContext, useRef } from "react"
+import { useContext, useRef } from "react"
 import { clickOutsideElement } from "../../helper-click";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
 import { CldImage, CldUploadButton } from "next-cloudinary";
@@ -11,6 +11,10 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
     const { isLogin, setIsLogin, setShowMyProfile, showOtherProfile, setShowOtherProfile } = useContext(LoginProfileContext)
     // profile ref 
     const profileRef = useRef(null)
+    // profile photo
+    let photoSrc = 'data:,' 
+    if(isLogin[0] && isLogin[1].id === userData.id && isLogin[1].photo) photoSrc = isLogin[1].photo
+    else if(userData && userData.photo) photoSrc = userData.photo
     // click outside profile
     clickOutsideElement(profileRef, () => setShowMyProfile(false))
 
@@ -32,14 +36,7 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
             </p>
             {/* profile picture */}
             <div className="flex gap-2">
-                <CldImage alt="pic 160x160" className="border-2" width={160} height={160} 
-                    src={isLogin[0] 
-                            ? isLogin[1].photo 
-                            : userData && userData.photo
-                                ? userData.photo
-                                : 'data:,'
-                        } 
-                />
+                <CldImage src={photoSrc} alt="pic 160x160" className="border-2" width={160} height={160} />
                 { 
                     isLogin[0] && userData.id === isLogin[1].id 
                         ? <div className="self-center">

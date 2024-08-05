@@ -30,7 +30,7 @@ export default class AuthController {
         try {
             // verify the token
             const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET)
-            const verified = await jwtVerify(args.token, secret)
+            const verified = await jwtVerify<LoginProfileType>(args.token, secret)
             if(args.action === 'verify-only') 
                 return true
             else if(args.action === 'verify-payload') {
@@ -38,7 +38,8 @@ export default class AuthController {
                     id: verified.payload.id,
                     display_name: verified.payload.display_name,
                     is_login: verified.payload.is_login,
-                    description: verified.payload.description
+                    description: verified.payload.description,
+                    photo: verified.payload.photo
                 } 
                 return verifiedUser as LoginProfileType
             }
@@ -78,7 +79,8 @@ export default class AuthController {
             id: verifyRefresh.payload.id,
             display_name: verifyRefresh.payload.display_name,
             is_login: verifyRefresh.payload.is_login,
-            description: verifyRefresh.payload.description
+            description: verifyRefresh.payload.description,
+            photo: verifyRefresh.payload.photo
         }
         const newAccessToken = await this.generateAccessToken(refreshUser)
         return getPayload

@@ -200,7 +200,7 @@ export default class UserController extends Controller {
                 type NewSelectResDataType = LoginProfileType & { token?: string }
                 let newSelectResData: NewSelectResDataType[] | IProfilePayload[]
                 // login case
-                if(selectResponse.data[0]?.user_id?.username) {
+                if(selectResponse.data[0]?.user_id?.id) {
                     const { user_id, description, photo } = selectResponse.data[0]
                     newSelectResData = [{
                         id: user_id.id,
@@ -225,6 +225,8 @@ export default class UserController extends Controller {
                         ...newSelectResData[0],
                         token: accessToken
                     }
+                    console.log(newSelectResData);
+                    
                 }
                 // get user case
                 else {

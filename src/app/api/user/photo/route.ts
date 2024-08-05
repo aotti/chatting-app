@@ -8,6 +8,8 @@ const userController = new UserController()
 export async function POST(req: NextRequest) {
     // create api action
     const action = await api_action(req.nextUrl.pathname, req.method)
+    console.log(action);
+    
     const { paramsToSign } = await req.json()
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET)
     return NextResponse.json({ signature })

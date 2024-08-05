@@ -110,11 +110,6 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         // set dark mode state
         setDarkMode(JSON.parse(getDarkMode))
         const getAccessToken = window.localStorage.getItem('accessToken')
-        // is exist
-        if(!getAccessToken) {
-            // stop loading page
-            return setIsLoading(false)
-        }
         // verify token
         verifyAccessToken(getAccessToken, accessSecret)
         .then(async verifiedUser => {
