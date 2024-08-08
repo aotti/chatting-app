@@ -26,12 +26,11 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         publishKey: pubnubKeys.pub,
         userId: pubnubKeys.uuid
     })
-    // header-MenuButton
-    // dark mode state
+    // dark mode state, HeaderContent - MenuButton
     const [darkMode, setDarkMode] = useState(false)
-    // get page for display
+    // get page for display, HeaderContent - MainContent - HomePage - LoginPage - RegisterPage - UserList
     const [displayPage, setDisplayPage] = useState('home')
-    // loading state
+    // loading state, HomePage - UserList - ChattingPage
     const [isLoading, setIsLoading] = useState(true)
     // dark mode props
     const darkModeStates = {
@@ -43,8 +42,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         setIsLoading: setIsLoading
     }
 
-    // main-SearchBox
-    // users found
+    // users found, SearchBox
     const [usersFound, setUsersFound] = useState<LoginProfileType[]>(null)
     // users found props
     const usersFoundStates = {
@@ -52,16 +50,12 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         setUsersFound: setUsersFound
     }
 
-    // header-MenuButton 
-    // main-MainContent, Profile, UserList
-    // show my profile
+    // show my profile, MenuButton - MainContent - Profile - UserList
     const [showMyProfile, setShowMyProfile] = useState(false)
-    // show other profile
+    // show other profile, MenuButton - MainContent - Profile - UserList
     const [showOtherProfile, setShowOtherProfile] = useState<[boolean, LoginProfileType]>([false, null])
 
-    // header-MenuButton, LogoutButton
-    // main-HomePage, LoginPage, Profile, UserList
-    // login status 
+    // login status, MenuButton - LogoutButton - HomePage - LoginPage - Profile - UserList
     const [isLogin, setIsLogin] = useState<[boolean, LoginProfileType]>([false, null])
 
     // login profile props
@@ -273,7 +267,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                 <UsersFoundContext.Provider value={ usersFoundStates }>
                     <ChatWithContext.Provider value={ chatWithStates }>
                         <PubNubProvider client={pubnub}>
-                            <div className={ darkMode ? 'dark' : '' }>
+                            <div className={ darkMode ? 'dark' : '' } onDrop={ev => ev.preventDefault()} onDragOver={ev => ev.preventDefault()}>
                                 <div className="grid grid-rows-10 bg-slate-300 dark:bg-slate-800">
                                     {/* header */}
                                     <header className="row-span-1 h-fit p-3 bg-blue-300 dark:bg-orange-400 dark:text-white">

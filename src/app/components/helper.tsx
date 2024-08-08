@@ -43,10 +43,10 @@ export function sha256(text: string) {
     return hash
 }
 
-export async function verifyAccessToken(token: string, accessSecret: string, onlyVerify?: boolean) {
+export async function verifyAccessToken(token: string, secret: string, onlyVerify?: boolean) {
     try {
         // verify token
-        const encodedSecret = new TextEncoder().encode(accessSecret)
+        const encodedSecret = new TextEncoder().encode(secret)
         const verifyToken = await jwtVerify<LoginProfileType>(token, encodedSecret)
         // only wanna verify, not get the payload
         if(onlyVerify) return true

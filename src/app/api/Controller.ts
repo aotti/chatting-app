@@ -45,7 +45,6 @@ export class Controller {
             loggedUsers = tempLoggedUsers
             // hash the logged users 
             const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
-            console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }
         else if(args.action === 'filter') {
@@ -53,11 +52,9 @@ export class Controller {
             loggedUsers = loggedUsers.filter(u => u.id !== args.data.id)
             // hash the logged users 
             const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
-            console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }
         else if(args.action === 'getUsers') {
-            console.log(args.action, {loggedUsers})
             return loggedUsers.filter(u => u.id === args.data.id) as T
         }
         else if(args.action === 'renew') {
@@ -71,7 +68,6 @@ export class Controller {
             loggedUsers[renewUser].token = loggedUserToken
             // hash the logged users 
             const encryptedLoggedUsers = await encryptData({text: JSON.stringify(loggedUsers)})
-            console.log(args.action, {loggedUsers})
             return encryptedLoggedUsers as T
         }
     }

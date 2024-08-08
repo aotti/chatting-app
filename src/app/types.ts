@@ -16,7 +16,7 @@ interface IQueryBuilder {
     table: string;
     selectColumn?: string | number;
     function?: string;
-    function_args?: {[key: string]: string | number};
+    function_args?: {[key: string]: string | number | boolean};
     order?: {
         col: string;
         by: 'asc' | 'desc';
@@ -36,7 +36,7 @@ interface IQueryInsert extends IQueryBuilder {
         // login
         ILogin |
         // direct chat
-        IDirectChat
+        Pick<IChat, 'message_id'>['message_id']
 }
 
 interface IQueryUpdate extends IQueryBuilder {
@@ -50,7 +50,7 @@ interface IQueryUpdate extends IQueryBuilder {
         // profile
         IProfile |
         // direct chat
-        IDirectChat
+        Pick<IChat, 'message_id'>['message_id']
 }
 
 // response
@@ -149,11 +149,24 @@ interface IProfilePayload extends IProfile {
 }
 
 // message object
-interface IMessage extends IDirectChat {
+interface IChat {
+    user_me: string;
+    user_with: string;
+    message_id?: {
+        user_id: string;
+        message: string;
+        is_image: boolean;
+        created_at?: string;
+        updated_at?: string;
+    }
+}
+
+interface IMessage extends IChat {
     messages: {
         user: string;
         style: string;
         text: string;
+        is_image: boolean;
         time: string;
         date: string;
         created_at: string;
@@ -161,27 +174,22 @@ interface IMessage extends IDirectChat {
 }
 
 // direct message
-interface IDirectChat {
-    user_me: string;
-    user_with: string;
-    message_id?: {
-        user_id: string;
-        message: string;
-        created_at?: string;
-        updated_at?: string;
-    }
-}
-
-interface IDirectChatPayload extends IDirectChat {
+interface IDirectChatPayload extends IChat {
     display_me: string;
     message: string;
+    is_image: boolean;
     time: string;
     date: string;
     created_at: string;
 }
 
-interface IHistoryMessagePayload extends IDirectChat {
+interface IHistoryMessagePayload extends IChat {
     amount: number;
+}
+
+// images
+interface IImagePayload extends IChat {
+    is_uploaded: boolean;
 }
 
 export type {
@@ -215,5 +223,7 @@ export type {
     IMessage,
     // direct message
     IDirectChatPayload,
-    IHistoryMessagePayload
+    IHistoryMessagePayload,
+    // image
+    IImagePayload
 }

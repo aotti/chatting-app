@@ -52,8 +52,11 @@ export default function UserList({ crypto }: IUserList) {
                                 {/* chat button */}
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
+                                        // set loading until chat history retrieved
                                         setIsLoading(true)
+                                        // open chat box
                                         startChat(isLogin, setChatWith, user, setDisplayPage);
+                                        // retrieve chat history
                                         if(isLogin[1])
                                             await historyChat(isLogin[1], user, crypto, historyChatStates);
                                     }}>
@@ -91,6 +94,8 @@ export async function historyChat(userMe: LoginProfileType, userWith: LoginProfi
         const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(userWith.id)
         // if user message is logged
         if(checkUserHistory !== -1) {
+            // end the loading page
+            setIsLoading(false)
             // get from message data from history message log, no need to fetch
             return setMessageItems(historyMessageLog[checkUserHistory].messages)
         }
@@ -123,6 +128,7 @@ export async function historyChat(userMe: LoginProfileType, userWith: LoginProfi
                     user: userMe.id === hrd.user_id ? userMe.display_name : userWith.display_name,
                     style: userMe.id === hrd.user_id ? 'justify-end' : 'justify-start',
                     text: hrd.message,
+                    is_image: hrd.is_image,
                     time: new Date(hrd.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
                     date: new Date(hrd.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'}),
                     created_at: hrd.created_at

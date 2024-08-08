@@ -20,8 +20,7 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
 
     return (
         // profile container
-        <div className={`border-2 border-black p-2 ${profileClassName} bg-lime-300 dark:bg-pink-600
-            md:w-1/4`} 
+        <div className={`static z-10 border-2 border-black p-2 ${profileClassName} bg-lime-300 dark:bg-pink-600 md:w-1/4`} 
             ref={profileRef}>
             {
                 // if show other profile, show 'back' button
@@ -36,7 +35,7 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
             </p>
             {/* profile picture */}
             <div className="flex gap-2">
-                <CldImage src={photoSrc} alt="pic 160x160" className="border-2" width={160} height={160} />
+                <CldImage src={photoSrc} alt="pic 160x160" loading="lazy" className="border-2" width={160} height={160} />
                 { 
                     isLogin[0] && userData.id === isLogin[1].id 
                         ? <div className="self-center">
@@ -52,8 +51,8 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
                                 signatureEndpoint="/api/user/photo" 
                                 options={{
                                     sources: ['local'], publicId:`profile_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
-                                    multiple: false, maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
-                                    cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
+                                    maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
+                                    multiple: false, cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
                                     croppingAspectRatio: 1, croppingShowDimensions: true
                                 }} 
                                 onSuccess={(result, {widget}) => uploadProfilePhoto(result, widget, isLogin[1].id, setIsLogin)}

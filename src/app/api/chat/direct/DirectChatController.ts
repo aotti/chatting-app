@@ -22,10 +22,11 @@ export class DirectChatController extends Controller {
                 function_args: { 
                     user_from: payload.user_me, 
                     user_to: payload.user_with,
-                    message: JSON.parse(payload.message)
+                    message: JSON.parse(payload.message),
+                    is_image: payload.is_image
                 }
             }
-            // insert data
+            // insert data 
             const insertResponse = await this.dq.insert<any>(queryObject as IQueryInsert)
             // fail 
             if(insertResponse.data === null) {
@@ -38,6 +39,7 @@ export class DirectChatController extends Controller {
                     style: 'justify-start',
                     user: payload.display_me,
                     text: JSON.parse(payload.message),
+                    is_image: payload.is_image,
                     time: payload.time,
                     date: payload.date,
                     created_at: payload.created_at
