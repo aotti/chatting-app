@@ -21,9 +21,19 @@ export default function ChattingPage() {
     const [imageDropPreview, setImageDropPreview] = useState('hidden')
     const [imageZoomPreview, setImageZoomPreview] = useState('')
     const [imageChatData, setImageChatData] = useState<ImagesChat>(null)
+    // showUploadWidget
+    const [showUploadWidget, setShowUploadWidget] = useState(true)
     // login profile context
     const { isLogin } = useContext(LoginProfileContext)
 
+    // upload widget timeout for auto refresh (mobile cant mouseover)
+    useEffect(() => {
+        if(showUploadWidget === false) {
+            setTimeout(() => {
+                setShowUploadWidget(true)
+            }, 1000);
+        }
+    }, [showUploadWidget])
     // update unread message
     useEffect(() => {
         if(unreadMessageItems) {
@@ -159,23 +169,34 @@ export default function ChattingPage() {
             </div>
             {/* send message box */}
             <div className="flex items-center">
-                <form className="flex justify-around w-full" onSubmit={ev => sendChat(ev, userChatData, sendChatStates)}>
+                <form className="flex justify-around gap-1 w-full" onSubmit={ev => sendChat(ev, userChatData, sendChatStates)}>
                     <input type="text" className="text-xl p-1 w-4/5 rounded-md dark:text-black" id="messageBox" />
-                    <CldUploadWidget signatureEndpoint="/api/user/photo"
-                    options={{ sources: ['local', 'url'], maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, publicId:`image_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-images' }} 
-                    onSuccess={async (result, {widget}) => {
-                        const tempImageChatData: ImagesChat = { base64_file: result.info['public_id'], size: result.info['bytes'], is_uploaded: true }
-                        await sendChat(null, userChatData, sendChatStates, tempImageChatData);
-                        widget.close()
-                    }}>
-                        {({ open }) => {
-                            return (
-                                <button className="w-fit rounded-md bg-orange-400 dark:bg-sky-600" onClick={() => open('local')}>
-                                    <img src="https://img.icons8.com/?id=yF8LPIFelJU7&format=png&color=000000" alt="img-up" />
-                                </button>
-                            )
-                        }}
-                    </CldUploadWidget>
+                    {
+                    !showUploadWidget
+                        // hide si showUploadWidget yatim agar public id reset
+                        ? <button className="w-fit rounded-md bg-orange-400 dark:bg-sky-600">
+                            <img src="https://img.icons8.com/?id=yF8LPIFelJU7&format=png&color=000000" alt="img-up" />
+                        </button>
+                        // show si showUploadWidget agar public id selalu fresh
+                        : <CldUploadWidget signatureEndpoint="/api/user/photo"
+                            options={{ sources: ['local', 'url'], maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, publicId: `image_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-images' }} 
+                            onSuccess={async (result, {widget}) => {
+                                widget.close()
+                                setShowUploadWidget(false)
+                                // send image chat
+                                const tempImageChatData: ImagesChat = { base64_file: result.info['public_id'], size: result.info['bytes'], is_uploaded: true }
+                                await sendChat(null, userChatData, sendChatStates, tempImageChatData);
+                            }}>
+                            {({ open }) => {
+                                return (
+                                    <button className="w-fit rounded-md bg-orange-400 dark:bg-sky-600" 
+                                        onClick={() => open('local')}>
+                                        <img src="https://img.icons8.com/?id=yF8LPIFelJU7&format=png&color=000000" alt="img-up" />
+                                    </button>
+                                )
+                            }}
+                        </CldUploadWidget>
+                    }
                     <button type="submit" className="inline-block bg-orange-400 dark:bg-orange-600 py-1 px-2 w-24 h-12 rounded-md"> 
                         Send 
                     </button>
@@ -260,7 +281,8 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
                     <p className="text-left">
                         {
                             msgItem.is_image 
-                                ? <CldImage src={msgItem.text} alt="image-chat" width={300} height={250} className="max-w-md max-h-80 cursor-pointer" onClick={ev => { 
+                                // width & height overwritten by !important style
+                                ? <CldImage src={msgItem.text} alt="image-chat" width={200} height={0} className="!w-auto !h-auto cursor-pointer" onClick={ev => { 
                                     setImageZoomPreview(ev.currentTarget.src)
                                     setImageDropPreview('flex') 
                                 }} />
@@ -281,15 +303,15 @@ function ImagePreview({ imagePreviewStates, userChatData = null, sendChatStates 
     return (
         <div id="imagePreviewContainer" className={`absolute z-20 ${imageDropPreview} bg-black/30 border-2 border-dashed h-[72%] w-[91%] md:w-[71%]`}>
             <div className="mx-auto self-center">
-                <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" className={`border mx-auto ${imageZoomPreview ? 'max-w-xl max-h-full' : 'w-1/2 h-1/3'}`}/>
+                <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" className={`border mx-auto ${imageZoomPreview ? 'w-auto h-auto md:max-w-xl md:max-h-96' : 'w-1/2 h-1/3'}`}/>
                 <span id="imageErrorMessage" className="text-red-600"></span>
                 {/* send image chat */}
-                <button className="w-20 mx-2 mt-3 p-1 rounded-md bg-slate-400" 
+                <button className="w-20 mx-2 mt-3 p-1 border-2 rounded-md bg-slate-400" 
                     onClick={() => imageDragLeave(setImageDropPreview, setImageZoomPreview)}> ❌ </button>
-                {// IF != empty THEN ONLY SHOW x button, ELSE SHOW ALL 
+                {// IF imageZoomPreview != null THEN ONLY SHOW x button, ELSE SHOW ALL 
                     imageZoomPreview 
                         ? null
-                        : <button className="w-20 mx-2 mt-3 p-1 rounded-md bg-orange-400" 
+                        : <button className="w-20 mx-2 mt-3 p-1 border-2 rounded-md bg-orange-400" 
                             onClick={() => {
                             if(imageChatData) sendChat(null, userChatData, sendChatStates, imageChatData);
                             setImageDropPreview('hidden');
@@ -339,7 +361,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         user_with: _with.id,
         message: JSON.stringify(formInputs[0].value),
         is_image: image ? true : false,
-        is_uploaded: image.is_uploaded,
+        is_uploaded: !image ? false : image.is_uploaded,
         time: messageTime,
         date: messageDate,
         created_at: new Date().toISOString()

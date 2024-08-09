@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import { clickOutsideElement } from "../../helper-click";
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
 import { CldImage, CldUploadButton } from "next-cloudinary";
@@ -11,12 +11,23 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
     const { isLogin, setIsLogin, setShowMyProfile, showOtherProfile, setShowOtherProfile } = useContext(LoginProfileContext)
     // profile ref 
     const profileRef = useRef(null)
+    // showUploadWidget
+    const [showUploadWidget, setShowUploadWidget] = useState(true)
     // profile photo
     let photoSrc = 'data:,' 
     if(isLogin[0] && isLogin[1].id === userData.id && isLogin[1].photo) photoSrc = isLogin[1].photo
     else if(userData && userData.photo) photoSrc = userData.photo
     // click outside profile
     clickOutsideElement(profileRef, () => setShowMyProfile(false))
+
+    // upload widget timeout for auto refresh (mobile cant mouseover)
+    useEffect(() => {
+        if(showUploadWidget === false) {
+            setTimeout(() => {
+                setShowUploadWidget(true)
+            }, 1000);
+        }
+    }, [showUploadWidget])
 
     return (
         // profile container
@@ -47,16 +58,25 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
                                     ❔ 
                                 </span>
                             </div>
-                            <CldUploadButton className="bg-sky-600 h-fit p-2 rounded-lg" 
-                                signatureEndpoint="/api/user/photo" 
-                                options={{
-                                    sources: ['local'], publicId:`profile_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
-                                    maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
-                                    multiple: false, cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
-                                    croppingAspectRatio: 1, croppingShowDimensions: true
-                                }} 
-                                onSuccess={(result, {widget}) => uploadProfilePhoto(result, widget, isLogin[1].id, setIsLogin)}
-                            />
+                            {
+                            !showUploadWidget
+                                ? <button className="bg-sky-600 h-fit p-2 rounded-lg"> Upload </button>
+                                : <CldUploadButton className="bg-sky-600 h-fit p-2 rounded-lg" signatureEndpoint="/api/user/photo" 
+                                    options={{
+                                        sources: ['local'], publicId: `image_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
+                                        maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
+                                        multiple: false, cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
+                                        croppingAspectRatio: 1, croppingShowDimensions: true
+                                    }} 
+                                    onSuccess={async (result, {widget}) => {
+                                        // close widget
+                                        widget.close()
+                                        setShowUploadWidget(false)
+                                        // save photo to db
+                                        await uploadProfilePhoto(result, isLogin[1].id, setIsLogin)
+                                    }}
+                                />
+                            }
                         </div>
                         : null
                 }
@@ -77,13 +97,12 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
     )
 }
 
-async function uploadProfilePhoto(result, widget, userId: string, setIsLogin) {
+async function uploadProfilePhoto(result, userId: string, setIsLogin) {
     // set new profile photo
     setIsLogin(data => {
         data[1].photo = result.info.public_id
         return data
     })
-    widget.close()
     // access token
     const token = window.localStorage.getItem('accessToken')
     // update photo to db
