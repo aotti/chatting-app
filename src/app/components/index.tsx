@@ -268,17 +268,17 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     <ChatWithContext.Provider value={ chatWithStates }>
                         <PubNubProvider client={pubnub}>
                             <div className={ darkMode ? 'dark' : '' } onDrop={ev => ev.preventDefault()} onDragOver={ev => ev.preventDefault()}>
-                                <div className="grid grid-rows-10 bg-slate-300 dark:bg-slate-800">
+                                <div className="grid gap-1 bg-slate-300 dark:bg-slate-800">
                                     {/* header */}
-                                    <header className="row-span-1 h-fit p-3 bg-blue-300 dark:bg-orange-400 dark:text-white">
+                                    <header className="p-3 bg-blue-300 dark:bg-orange-400 dark:text-white">
                                         <HeaderContent />
                                     </header>
                                     {/* main */}
-                                    <main className="row-span-8 h-full dark:text-white">
+                                    <main className="h-screen dark:text-white">
                                         <MainContent crypto={crypto} />
                                     </main>
                                     {/* footer */}
-                                    <footer className="row-span-1 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
+                                    <footer className="mt-2 md:mt-4 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
                                         <FooterContent />
                                     </footer>
                                 </div>

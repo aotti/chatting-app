@@ -143,11 +143,11 @@ export default function ChattingPage() {
     };
 
     return (
-        <div className="grid grid-rows-8 h-screen p-2">
+        <div className="grid grid-rows-10 w-full h-screen p-2">
             {/* user */}
-            <div className="flex justify-center gap-4 p-2">
+            <div className="flex justify-center gap-4">
                 <div className={photoSrc == 'data:,' ? 'rounded-full border border-black dark:border-white' : ''}>
-                    <CldImage src={photoSrc} alt="pfp" width={64} height={64} radius={'max'}/>
+                    <CldImage src={photoSrc} alt="pfp" width={60} height={60} radius={'max'}/>
                 </div>
                 <div className="">
                     <p> {chatWith.display_name} </p>
@@ -155,7 +155,7 @@ export default function ChattingPage() {
                 </div>
             </div>
             {/* chat box */}
-            <div className="flex items-end row-span-6 border-b border-t border-black dark:border-white" 
+            <div className="flex items-end row-span-8 border-b border-t border-black dark:border-white" 
                 onDrop={ev => previewImage(ev, setImageDropPreview, setImageChatData)} onDragOver={ev => imageDragOver(ev, setImageDropPreview)} onDragLeave={() => imageDragLeave(setImageDropPreview, setImageZoomPreview)}>
                 {
                     isLoading
@@ -174,7 +174,7 @@ export default function ChattingPage() {
                     {
                     !showUploadWidget
                         // hide si showUploadWidget yatim agar public id reset
-                        ? <button className="w-fit rounded-md bg-orange-400 dark:bg-sky-600">
+                        ? <button type="button" className="w-fit rounded-md bg-orange-400 dark:bg-sky-600">
                             <img src="https://img.icons8.com/?id=yF8LPIFelJU7&format=png&color=000000" alt="img-up" />
                         </button>
                         // show si showUploadWidget agar public id selalu fresh
@@ -189,7 +189,7 @@ export default function ChattingPage() {
                             }}>
                             {({ open }) => {
                                 return (
-                                    <button className="w-fit rounded-md bg-orange-400 dark:bg-sky-600" 
+                                    <button type="button" className="w-fit rounded-md bg-orange-400 dark:bg-sky-600" 
                                         onClick={() => open('local')}>
                                         <img src="https://img.icons8.com/?id=yF8LPIFelJU7&format=png&color=000000" alt="img-up" />
                                     </button>
@@ -232,7 +232,7 @@ function Messages({ historyMessages, firstMessage, imagePreviewStates }: {histor
                 : dateMessages.map((d, i) => {
                     return (
                         <div key={i}>
-                            <div className="sticky top-0 z-10">
+                            <div className="sticky top-0 z-10 flex justify-center">
                                 <span className="bg-lime-300 dark:bg-pink-600 rounded-md p-1"> 
                                     {/* eg: 01/30/1999 to Januari 30, 1999 */}
                                     {d.date.replace(/\d+/, monthNames[+d.date.split('/')[0]-1]).replaceAll('/', ', ').replace(', ', ' ')} 

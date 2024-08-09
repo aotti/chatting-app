@@ -60,7 +60,7 @@ export default function Profile({ profileClassName, userData }: { profileClassNa
                             </div>
                             {
                             !showUploadWidget
-                                ? <button className="bg-sky-600 h-fit p-2 rounded-lg"> Upload </button>
+                                ? <button type="button" className="bg-sky-600 h-fit p-2 rounded-lg"> Upload </button>
                                 : <CldUploadButton className="bg-sky-600 h-fit p-2 rounded-lg" signatureEndpoint="/api/user/photo" 
                                     options={{
                                         sources: ['local'], publicId: `image_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',

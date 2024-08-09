@@ -103,7 +103,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
     }, [])
 
     return (
-        <>
+        <div className="text-center">
             <p className="text-xl"> Welcome {loginData.display_name}! </p>
             {  // if null
             !unreadMessageItems || unreadMessageItems.length === 0
@@ -130,7 +130,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                     }
                 </>
             }
-        </>
+        </div>
     )
 }
 

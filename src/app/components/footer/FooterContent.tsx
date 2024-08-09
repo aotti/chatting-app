@@ -1,5 +1,7 @@
 export default function FooterContent() {
     return (
-        <p className="h-full"> ©aotti 2024 </p>
+        <div className="">
+            <span> ©aotti 2024 </span>
+        </div>
     )
 }

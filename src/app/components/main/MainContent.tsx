@@ -31,8 +31,8 @@ export default function MainContent({ crypto }) {
                 </div>
                 {/* user list container */}
                 <div className={`${showUserList ? '' : 'hidden'}
-                    absolute z-20 border-2 border-black p-2 w-2/3 bg-orange-300 dark:bg-sky-600
-                    md:static md:block md:col-span-3 md:w-auto`}>
+                    absolute z-20 p-2 w-2/3 bg-orange-300 dark:bg-sky-600
+                    md:static md:z-auto md:block md:col-span-3 md:w-auto`}>
                     {/* hide user list button for mobile */}
                     <div className={`${showUserList ? '' : 'hidden'}
                         w-fit invert mb-2
@@ -57,12 +57,12 @@ export default function MainContent({ crypto }) {
                 </div>
                 {/* main container */}
                 <div className="
-                    border-2 border-black h-full bg-amber-300 dark:bg-emerald-800
+                    bg-amber-300 dark:bg-emerald-800
                     md:col-span-9">
                     {/* my profile */}
                     { showMyProfile && <Profile profileClassName="absolute right-2 w-2/3 h-3/4" userData={isLogin[1]} />}
                     {/* pages container */}
-                    <div className="table-cell align-middle text-center w-screen h-screen">
+                    <div className="flex items-center justify-center h-screen">
                         {
                             isLogin[0] && displayPage == 'chatting' 
                                 ? <ChattingPage />
