@@ -1,7 +1,8 @@
-import { IDirectChatPayload, IHistoryMessagePayload, ILoginPayload, IProfilePayload, IRegisterPayload, IResponse, PayloadTypes } from "../types";
+import { IResponse, PayloadTypes } from "../types";
 import { respond } from "./helper";
 
 export default async function filter(action: string, payload: PayloadTypes) {
+    // log the action
     console.log(action);
 
     let filterResult: IResponse = {
@@ -18,8 +19,9 @@ export default async function filter(action: string, payload: PayloadTypes) {
         case action.includes('login'): [filterStatus, filterMessage] = login(payload); break
         case action.includes('logout'): [filterStatus, filterMessage] = logout(payload); break
         case action.includes('insert chat direct'): [filterStatus, filterMessage] = directChat(payload); break
-        case action.includes('get chat direct'): [filterStatus, filterMessage] = historyMessages(payload); break
+        case action.includes('get chat direct'): [filterStatus, filterMessage] = historyDMS(payload); break
         case action.includes('unread dms'): [filterStatus, filterMessage] = unreadDMS(payload); break
+        case action.includes('chat image'): [filterStatus, filterMessage] = sendImage(payload); break
     }
     // found error
     if(!filterStatus) filterResult = await respond(400, filterMessage, [])
@@ -161,7 +163,7 @@ function directChat(payload: PayloadTypes) {
     return resultValue
 }
 
-function historyMessages(payload: PayloadTypes) {
+function historyDMS(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /user_me|user_with|amount/g
@@ -215,6 +217,34 @@ function unreadDMS(payload: PayloadTypes) {
     return resultValue
 }
 
+function sendImage(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /message|image_size|is_uploaded/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 3)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'message':
+                resultValue = valueCheck(key, value, 'string', 1); break
+            case 'image_size':
+                resultValue = valueCheck(key, value, 'number'); break
+            case 'is_uploaded':
+                resultValue = valueCheck(key, value, 'boolean'); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
 // utility functions
 /**
  * check number of payload keys and match each key with regex
@@ -237,7 +267,7 @@ function keyCheck(payloadKeys: string, regex: RegExp, length: number): [boolean,
  * @param key payload key
  * @param value payload value
  * @param type typeof value to check
- * @param length value length
+ * @param length required value length
  * @returns true if no error
  */
 function valueCheck(key: string, value: string | number | boolean, type: string, length?: number, regex?: RegExp): [boolean, string] {

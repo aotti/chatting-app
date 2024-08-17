@@ -7,6 +7,7 @@ import { Controller } from "../Controller"
 import { LoginProfileType } from "../../context/LoginProfileContext"
 import AuthController from "../token/AuthController"
 import { DirectChatController } from "../chat/direct/DirectChatController"
+import { GroupController } from "../group/GroupController"
 
 export default class UserController extends Controller {
 
@@ -85,18 +86,25 @@ export default class UserController extends Controller {
                         result = await respond(400, `username/password doesnt match!`, [])
                     // correct
                     else {
+                        // get group names
+                        const groupController = new GroupController()
+                        const getGroupNames = await groupController.getGroups(action, {user_me: selectResponse.data[0].id})
+                        // if error, return
+                        if(getGroupNames.status !== 200) return getGroupNames
                         // get unread message
                         const directChat = new DirectChatController()
                         const encryptedData = await encryptData({text: JSON.stringify(selectResponse.data[0])})
                         const getUnreadMessages = await directChat.unreadMessages('unread dms', {data: encryptedData})
-                        // if theres error on getting unread messages
+                        // if error, return
                         if(getUnreadMessages.status !== 200) return getUnreadMessages
                         // remove to prevent last access not updating, the prop not required when login
                         delete selectResponse.data[0].last_access
                         // update last access & get profile
                         result = await this.lastAccess(action, selectResponse.data[0], req)
                         // combine user profile & unread messages
-                        result.data[0] = {...result.data[0], ...getUnreadMessages.data[0]}
+                        result.data[0] = {...result.data[0], group: getGroupNames.data, ...getUnreadMessages.data[0]}
+                        console.log('login result', result);
+                        
                     }
                 }
             }
@@ -182,8 +190,7 @@ export default class UserController extends Controller {
                     selectColumn: this.dq.columnSelector('profiles', 234),
                     whereColumn: 'user_id',
                     whereValue: payload.id
-                }
-                : {
+                } : {
                     table: 'profiles',
                     function: 'join_users_profiles',
                     function_args: {name: payload.display_name}
@@ -225,8 +232,6 @@ export default class UserController extends Controller {
                         ...newSelectResData[0],
                         token: accessToken
                     }
-                    console.log(newSelectResData);
-                    
                 }
                 // get user case
                 else {

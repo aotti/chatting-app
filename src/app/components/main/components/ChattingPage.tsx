@@ -17,14 +17,20 @@ export default function ChattingPage() {
     const { chatWith, messageItems, 
         setMessageItems, setHistoryMessageLog, 
         unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
+    // login profile context
+    const { isLogin } = useContext(LoginProfileContext)
     // image preview state
     const [imageDropPreview, setImageDropPreview] = useState('hidden')
     const [imageZoomPreview, setImageZoomPreview] = useState('')
     const [imageChatData, setImageChatData] = useState<ImagesChat>(null)
     // showUploadWidget
     const [showUploadWidget, setShowUploadWidget] = useState(true)
-    // login profile context
-    const { isLogin } = useContext(LoginProfileContext)
+    // profile photo
+    let photoSrc = 'data:,' 
+    if(isLogin[0] && isLogin[1].id === chatWith.id && isLogin[1].photo) photoSrc = isLogin[1].photo
+    else if(chatWith && chatWith.photo) photoSrc = chatWith.photo
+    // // group photo
+    // const groupSrc = isGroupChat ? 'https://res.cloudinary.com/dk5hjh5w5/image/upload/v1723531320/meeting_wxp4ys.png' : null
 
     // upload widget timeout for auto refresh (mobile cant mouseover)
     useEffect(() => {
@@ -123,10 +129,6 @@ export default function ChattingPage() {
             pubsub.removeListener(publishedMessage)
         }
     }, [chatWith])
-    // profile photo
-    let photoSrc = 'data:,' 
-    if(isLogin[0] && isLogin[1].id === chatWith.id && isLogin[1].photo) photoSrc = isLogin[1].photo
-    else if(chatWith && chatWith.photo) photoSrc = chatWith.photo
     // image preview params
     const imagePreviewStates = {
         imageChatData: imageChatData,
@@ -262,7 +264,7 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
             <div className={`flex ${msgItem.style}`}>
                 <div className="border rounded-md min-w-32 p-1 my-2 bg-orange-400 dark:bg-sky-700">
                     {/* author & status*/}
-                    <p className="text-xs flex justify-between "> 
+                    <p className="text-xs flex justify-between gap-2"> 
                         <span className="mb-1"> {msgItem.user} </span>
                         <span id="messageStatus" className="brightness-150"> 
                             {   // for incoming messages
@@ -282,7 +284,8 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
                         {
                             msgItem.is_image 
                                 // width & height overwritten by !important style
-                                ? <CldImage src={msgItem.text} alt="image-chat" width={200} height={0} className="!w-auto !h-auto cursor-pointer" onClick={ev => { 
+                                ? <CldImage src={msgItem.text} alt="image-chat" width={200} height={0} 
+                                    className="!w-auto !max-h-72 md:!max-w-2xl cursor-pointer" onClick={ev => { 
                                     setImageZoomPreview(ev.currentTarget.src)
                                     setImageDropPreview('flex') 
                                 }} />
@@ -301,22 +304,30 @@ function ImagePreview({ imagePreviewStates, userChatData = null, sendChatStates 
     const { imageDropPreview, setImageDropPreview, imageChatData, imageZoomPreview, setImageZoomPreview } = imagePreviewStates
     
     return (
-        <div id="imagePreviewContainer" className={`absolute z-20 ${imageDropPreview} bg-black/30 border-2 border-dashed h-[72%] w-[91%] md:w-[71%]`}>
+        <div id="imagePreviewContainer" className={`absolute z-20 ${imageDropPreview} bg-black/30 border-2 border-dashed h-[78%] w-[91%] md:w-[71%]`}>
             <div className="mx-auto self-center">
-                <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" className={`border mx-auto ${imageZoomPreview ? 'w-auto h-auto md:max-w-xl md:max-h-96' : 'w-1/2 h-1/3'}`}/>
-                <span id="imageErrorMessage" className="text-red-600"></span>
-                {/* send image chat */}
-                <button className="w-20 mx-2 mt-3 p-1 border-2 rounded-md bg-slate-400" 
-                    onClick={() => imageDragLeave(setImageDropPreview, setImageZoomPreview)}> ❌ </button>
-                {// IF imageZoomPreview != null THEN ONLY SHOW x button, ELSE SHOW ALL 
-                    imageZoomPreview 
-                        ? null
-                        : <button className="w-20 mx-2 mt-3 p-1 border-2 rounded-md bg-orange-400" 
-                            onClick={() => {
-                            if(imageChatData) sendChat(null, userChatData, sendChatStates, imageChatData);
-                            setImageDropPreview('hidden');
-                        }}> ✔ </button>
-                }
+                {/* image preview */}
+                <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" 
+                    className={`border mx-auto ${imageZoomPreview ? 'w-auto h-auto md:max-w-3xl md:max-h-96' : 'w-1/2 h-1/3'}`}/>
+                {/* error message */}
+                <div className="flex justify-center my-3">
+                    <p id="imageErrorMessage" className="text-red-600 font-semibold bg-red-200/50 w-fit px-2"> </p>
+                </div>
+                {/* buttons */}
+                <div className="flex justify-center">
+                    {/* send image chat */}
+                    <button className="w-20 mx-2 p-1 border-2 rounded-md bg-slate-400" 
+                        onClick={() => imageDragLeave(setImageDropPreview, setImageZoomPreview)}> ❌ </button>
+                    {// IF imageZoomPreview != null THEN ONLY SHOW x button, ELSE SHOW ALL 
+                        imageZoomPreview 
+                            ? null
+                            : <button className="w-20 mx-2 p-1 border-2 rounded-md bg-orange-400" 
+                                onClick={() => {
+                                if(imageChatData) sendChat(null, userChatData, sendChatStates, imageChatData);
+                                setImageDropPreview('hidden');
+                            }}> ✔ </button>
+                    }
+                </div>
             </div>
         </div>
     )
@@ -343,8 +354,8 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     // check input empty
     if(!formInputs[0].value) return
     // check image size, 2MB limit
-    // 1 MB = 1073741824, 2 MB = 2147483648
-    if(image?.size > 2147483648) {
+    // 1 MB = 1024_000, 2 MB = 2048_000
+    if(image?.size > 2048_000) {
         qS('#imageErrorMessage').textContent = 'image size limit is 2 MB'
         return
     }
@@ -354,14 +365,16 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
     const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
+    // can be use for DM (direct msg) / GM (group msg)
     const formData: IDirectChatPayload & IImagePayload = {
         // author is user_id
         user_me: _me.id,
         display_me: _me.display_name,
-        user_with: _with.id,
+        user_with: _with.id, // dm = user, gm = group id
         message: JSON.stringify(formInputs[0].value),
         is_image: image ? true : false,
-        is_uploaded: !image ? false : image.is_uploaded,
+        is_uploaded: !image ? false : image.is_uploaded, // !image to make sure the text message will always be FALSE
+        image_size: image ? image.size : 0,
         time: messageTime,
         date: messageDate,
         created_at: new Date().toISOString()
@@ -393,8 +406,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'authorization': `Bearer ${token}`,
-            'image-size': `${image?.size || 0}`
+            'authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
     }

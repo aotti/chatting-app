@@ -94,7 +94,7 @@ interface IFilterLoggedUsers {
 type LoggedUsersType = {action: 'push'; data: IPushLoggedUsers} | {action: 'filter'; data: IFilterLoggedUsers} | {action: 'getUsers'; data: IFilterLoggedUsers} | {action: 'renew'; data: IPushLoggedUsers}
 
 // payload types
-type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload | IHistoryMessagePayload
+type PayloadTypes = IRegisterPayload | ILoginPayload | IProfilePayload | IDirectChatPayload | IHistoryMessagePayload | IGroupPayload
 
 // register
 interface IRegister {
@@ -190,6 +190,32 @@ interface IHistoryMessagePayload extends IChat {
 // images
 interface IImagePayload extends IChat {
     is_uploaded: boolean;
+    image_size: number;
+}
+
+// group
+interface IGroup {
+    group_name?: string;
+    group_code?: string;
+    user_me?: string;
+    group_chat_id?: {
+        name: string
+    }
+}
+
+interface IGroupPayload extends IGroup {
+    find: {
+        group_name: string;
+    }
+    create: {
+        group_name: string;
+        group_code: string;
+        user_me: string;
+    }
+    join: {
+        group_code: string;
+        user_me: string;
+    }
 }
 
 export type {
@@ -225,5 +251,7 @@ export type {
     IDirectChatPayload,
     IHistoryMessagePayload,
     // image
-    IImagePayload
+    IImagePayload,
+    // group
+    IGroupPayload
 }

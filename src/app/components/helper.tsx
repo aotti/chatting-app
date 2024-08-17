@@ -56,7 +56,8 @@ export async function verifyAccessToken(token: string, secret: string, onlyVerif
             display_name: verifyToken.payload.display_name,
             is_login: verifyToken.payload.is_login,
             description: verifyToken.payload.description,
-            photo: verifyToken.payload.photo
+            photo: verifyToken.payload.photo,
+            group: verifyToken.payload.group
         }
         return verifiedUser
     } catch (error) {
@@ -197,4 +198,26 @@ export function modifyUnreadMessages(fetchResponse: IResponse) {
             modifiedUnreadMessages[unreadName]['unread_messages'].push(data.message)
     }
     return modifiedUnreadMessages
+}
+
+export async function getGroupNames(userData: LoginProfileType) {
+    // access token
+    const token = window.localStorage.getItem('accessToken')
+    const getGroupFetchOptions: RequestInit = { 
+        method: 'GET',
+        headers: {
+            'authorization': `Bearer ${token}`
+        }
+    }
+    // fetching
+    const getGroupResponse: IResponse = await (await fetcher(`/group?user_me=${userData.id}`, getGroupFetchOptions)).json()
+    // response api
+    switch(getGroupResponse.status) {
+        case 200:
+            console.log(getGroupResponse);
+            
+            return getGroupResponse.data
+        default: 
+            console.log({getGroupResponse})
+    }
 }

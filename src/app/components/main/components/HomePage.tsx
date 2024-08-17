@@ -6,7 +6,7 @@ import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
 import { IMessage } from "../../../types";
 import { searchUsername } from "./SearchBox";
-import { historyChat } from "./UserList";
+import { historyUserChat } from "./SearchList";
 import { UsersFoundContext } from "../../../context/UsersFoundContext";
 import LoadingPage from "../../loading";
 
@@ -36,7 +36,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
     const { isLogin } = useContext(LoginProfileContext)
     // chat with & unread message state
     const { setChatWith, setMessageItems, historyMessageLog, setHistoryMessageLog, unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
-    const historyChatStates = {
+    const historyUserChatStates = {
         setMessageItems: setMessageItems,
         historyMessageLog: historyMessageLog,
         setHistoryMessageLog: setHistoryMessageLog,
@@ -120,7 +120,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                                         // find user
                                         const getChatWith = await searchUsername(ev as any, setUsersFound, setChatWith, v.display_name);
                                         // get history message
-                                        await historyChat(isLogin[1], getChatWith, crypto, historyChatStates)
+                                        await historyUserChat(isLogin[1], getChatWith, crypto, historyUserChatStates)
                                         // display chat box
                                         setDisplayPage('chatting');
                                     }}> {'[read]'} </button>
@@ -136,8 +136,8 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
 
 function LoginFalse({ setDisplayPage }) {
     return (
-        <>
-            <p className=" text-xl"> Do you already have an account? </p>
+        <div className="text-center">
+            <p className="text-xl"> Do you already have an account? </p>
             <div className=" mt-2">
                 {/* login button */}
                 <button className=" bg-green-500 rounded-md p-2 w-20 shadow-sm shadow-black"
@@ -148,6 +148,6 @@ function LoginFalse({ setDisplayPage }) {
                 <button className=" bg-blue-500 rounded-md p-2 w-20 shadow-sm shadow-black"
                     onClick={() => setDisplayPage('register')}> Register </button>
             </div>
-        </>
+        </div>
     )
 }

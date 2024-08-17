@@ -15,7 +15,7 @@ export default function LoginPage() {
 
     return (
         <div className="
-            mx-auto p-2 border-2 border-black rounded-md bg-blue-500 dark:bg-blue-600
+            mx-auto p-2 border-2 border-black rounded-md bg-blue-500 dark:bg-blue-600 text-center
             lg:w-1/2 ">
             <form className="grid grid-rows-3 gap-4" onSubmit={(event) => loginAccount(event, setIsLogin, setUnreadMessageItems)}>
                 {/* username */}
@@ -38,16 +38,16 @@ export default function LoginPage() {
                 {/* message */}
                 <div className="font-semibold">
                     {/* success */}
-                    <p id="success_message" className="text-green-400"></p>
+                    <p id="success_message" className="text-green-300"></p>
                     {/* error */}
-                    <p id="error_message" className="text-red-400"></p>
+                    <p id="error_message" className="text-red-300"></p>
                 </div>
                 {/* submit button */}
                 <div className="grid grid-cols-2">
-                    <button type="button" className="text-xl bg-slate-400 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"
+                    <button type="button" className="text-xl bg-slate-400 rounded-md w-36 h-fit p-1 mx-auto shadow-sm shadow-black"
                         id="return_home"
                         onClick={() => setDisplayPage('home')}> Back </button>
-                    <button type="submit" className="text-xl bg-green-500 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"> Login </button>
+                    <button type="submit" className="text-xl bg-green-500 rounded-md w-36 h-fit p-1 mx-auto shadow-sm shadow-black"> Login </button>
                 </div>
             </form>
         </div>
@@ -112,6 +112,5 @@ async function loginAccount(ev: FormEvent<HTMLFormElement>, setIsLogin, setUnrea
         }
     } catch (error) {
         console.log(error);
-        
     }
 }

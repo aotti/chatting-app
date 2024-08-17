@@ -1,7 +1,10 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 import { IProfilePayload } from "../types";
+import { IGroupsFound } from "./UsersFoundContext";
 
-export type LoginProfileType = Pick<IProfilePayload, 'description'|'photo'> & Omit<IProfilePayload['user_id'], 'username'>
+export type LoginProfileType = Pick<IProfilePayload, 'description'|'photo'> 
+                            & Omit<IProfilePayload['user_id'], 'username'> 
+                            & {group?: string[]}
 
 interface ILoginProfileStates {
     // user login state
@@ -11,8 +14,8 @@ interface ILoginProfileStates {
     showMyProfile: boolean;
     setShowMyProfile: Dispatch<SetStateAction<boolean>>;
     // other's profile state
-    showOtherProfile: [boolean, LoginProfileType];
-    setShowOtherProfile: Dispatch<SetStateAction<[boolean, LoginProfileType]>>;
+    showOtherProfile: [boolean, LoginProfileType|IGroupsFound];
+    setShowOtherProfile: Dispatch<SetStateAction<[boolean, LoginProfileType|IGroupsFound]>>;
 }
 
 export const LoginProfileContext = createContext<ILoginProfileStates>({

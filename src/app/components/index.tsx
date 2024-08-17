@@ -4,10 +4,10 @@ import { useState, useEffect } from "react"
 import HeaderContent from "./header/HeaderContent"
 import MainContent from "./main/MainContent"
 import { LoginProfileContext, LoginProfileType } from "../context/LoginProfileContext"
-import { fetcher, getExpiredUsers, getUnreadMessages, verifyAccessToken } from "./helper"
+import { fetcher, getExpiredUsers, getGroupNames, getUnreadMessages, verifyAccessToken } from "./helper"
 import { IMessage, IResponse, IUserTimeout } from "../types"
 import { MiscContext } from "../context/MiscContext"
-import { UsersFoundContext } from "../context/UsersFoundContext"
+import { IGroupsFound, UsersFoundContext } from "../context/UsersFoundContext"
 import { ChatWithContext } from "../context/ChatWithContext"
 import FooterContent from "./footer/FooterContent"
 import Pubnub, { ListenerParameters } from "pubnub"
@@ -30,30 +30,39 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     const [darkMode, setDarkMode] = useState(false)
     // get page for display, HeaderContent - MainContent - HomePage - LoginPage - RegisterPage - UserList
     const [displayPage, setDisplayPage] = useState('home')
+    // change search box between user/group, SearchBox
+    // true = user, false = group
+    const [displaySearch, setDisplaySearch] = useState(true)
     // loading state, HomePage - UserList - ChattingPage
     const [isLoading, setIsLoading] = useState(true)
     // dark mode props
-    const darkModeStates = {
+    const miscStates = {
         darkMode: darkMode,
         setDarkMode: setDarkMode,
         displayPage: displayPage,
         setDisplayPage: setDisplayPage,
+        displaySearch: displaySearch,
+        setDisplaySearch: setDisplaySearch,
         isLoading: isLoading,
         setIsLoading: setIsLoading
     }
 
     // users found, SearchBox
     const [usersFound, setUsersFound] = useState<LoginProfileType[]>(null)
+    // group found, SearchBox, UserList
+    const [groupsFound, setGroupsFound] = useState<IGroupsFound[]>(null)
     // users found props
     const usersFoundStates = {
         usersFound: usersFound,
-        setUsersFound: setUsersFound
+        setUsersFound: setUsersFound,
+        groupsFound: groupsFound,
+        setGroupsFound: setGroupsFound
     }
 
     // show my profile, MenuButton - MainContent - Profile - UserList
     const [showMyProfile, setShowMyProfile] = useState(false)
     // show other profile, MenuButton - MainContent - Profile - UserList
-    const [showOtherProfile, setShowOtherProfile] = useState<[boolean, LoginProfileType]>([false, null])
+    const [showOtherProfile, setShowOtherProfile] = useState<[boolean, LoginProfileType|IGroupsFound]>([false, null])
 
     // login status, MenuButton - LogoutButton - HomePage - LoginPage - Profile - UserList
     const [isLogin, setIsLogin] = useState<[boolean, LoginProfileType]>([false, null])
@@ -109,6 +118,9 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
         .then(async verifiedUser => {
             // token expired
             if(!verifiedUser) throw 'token expired'
+            // get group names
+            const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
+            (verifiedUser as LoginProfileType).group = groupNames
             // get unread message
             const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType))
             setUnreadMessageItems(unreadMessages)
@@ -126,6 +138,9 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     const getAccessToken = renewAccessToken.data[0].token
                     // verify token
                     const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
+                    // get group names
+                    const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
+                    (verifiedUser as LoginProfileType).group = groupNames
                     // save token to local storage
                     window.localStorage.setItem('accessToken', getAccessToken)
                     // get unread message
@@ -262,7 +277,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
     // ~~~~~~~~~~~ HTML CODE ~~~~~~~~~~~~~
     return (
-        <MiscContext.Provider value={ darkModeStates }>
+        <MiscContext.Provider value={ miscStates }>
             <LoginProfileContext.Provider value={ loginProfileStates }>
                 <UsersFoundContext.Provider value={ usersFoundStates }>
                     <ChatWithContext.Provider value={ chatWithStates }>

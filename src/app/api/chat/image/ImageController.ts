@@ -25,10 +25,13 @@ export class ImageController extends Controller {
         }
 
         try {
-            // ### check file size
-            // ### check file size
-            // check if image uploaded via widget
+            // image upload via drag & drop
             if(payload.is_uploaded === false) {
+                // check file size
+                if(payload.image_size > 2048_000) {
+                    result = await respond(400, `image size is more than 2mb! (${(payload.image_size / 1e6).toFixed(2)})`, [])
+                    return result
+                }
                 // upload image
                 const uploadedImage = await cloudinary.uploader.upload(JSON.parse(payload.message), {
                     allowed_formats: ['jpg', 'png'],

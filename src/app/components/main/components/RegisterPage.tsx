@@ -8,7 +8,7 @@ export default function RegisterPage() {
     const { setDisplayPage } = useContext(MiscContext)
     return (
         <div className="
-            mx-auto p-2 border-2 border-black rounded-md bg-green-500 dark:bg-green-600
+            mx-auto p-2 border-2 border-black rounded-md bg-green-500 dark:bg-green-600 text-center
             lg:w-1/2 ">
             <form className="grid grid-rows-5 gap-4" onSubmit={(event) => registerAccount(event)}>
                 {/* display name */}
@@ -47,16 +47,16 @@ export default function RegisterPage() {
                 {/* message */}
                 <div className="font-semibold">
                     {/* success */}
-                    <p id="success_message" className="text-green-400"></p>
+                    <p id="success_message" className="text-green-300"></p>
                     {/* error */}
-                    <p id="error_message" className="text-red-400"></p>
+                    <p id="error_message" className="text-red-300"></p>
                 </div>
                 {/* submit button */}
                 <div className="grid grid-cols-2">
-                    <button type="button" className="text-xl bg-slate-400 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"
+                    <button type="button" className="text-xl bg-slate-400 rounded-md w-36 h-fit p-1 mx-auto shadow-sm shadow-black"
                         id="return_home"
                         onClick={() => setDisplayPage('home')}> Back </button>
-                    <button type="submit" className="text-xl bg-blue-500 rounded-md w-36 p-1 mx-auto shadow-sm shadow-black"> Register </button>
+                    <button type="submit" className="text-xl bg-blue-500 rounded-md w-36 h-fit p-1 mx-auto shadow-sm shadow-black"> Register </button>
                 </div>
             </form>
         </div>
@@ -66,55 +66,59 @@ export default function RegisterPage() {
 async function registerAccount(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
 
-    // message container
-    const errorMessage = qS('#error_message')
-    const successMessage = qS('#success_message')
-    // form inputs
-    // filter button elements
-    const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
-    // get form input values
-    const formData: IRegisterPayload = {
-        display_name: formInputs[0].value,
-        username: formInputs[1].value,
-        password: sha256(formInputs[2].value),
-        confirm_password: sha256(formInputs[3].value)
-    }
-    // check if display name have any character beside [a-z] and \s
-    if(formData.display_name.match(/[^a-z\s]/gi)) {
-        return errorMessage.textContent = `any symbol is not allowed! (Name)`
-    }
-    // check if username have any character beside LETTERS and NUMBERS
-    if(formData.username.match(/[^a-z0-9]/gi)) {
-        return errorMessage.textContent = `only letters and numbers allowed! (Username)`
-    }
-    // confirm password
-    if(formData.password !== formData.confirm_password) {
-        return errorMessage.textContent = `password doesn't match!`
-    }
-    errorMessage.textContent = ''
-    // register account
-    // fetch options
-    const registerFetchOptions: RequestInit = {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    } 
-    // fetching api
-    successMessage.textContent = 'loading..'
-    const registerResponse: IResponse = await (await fetcher('/user/register', registerFetchOptions)).json()
-    successMessage.textContent = ''
-    // response api
-    switch(registerResponse.status) {
-        case 201: 
-            successMessage.textContent = 'register success! redirect to home..'
-            errorMessage.textContent = ``
-            setTimeout(() => {
-                (qS('#return_home') as HTMLButtonElement).click()
-            }, 2000);
-            break
-        default: 
-            errorMessage.textContent = `${registerResponse.status}: ${registerResponse.message}`
+    try {
+        // message container
+        const errorMessage = qS('#error_message')
+        const successMessage = qS('#success_message')
+        // form inputs
+        // filter button elements
+        const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
+        // get form input values
+        const formData: IRegisterPayload = {
+            display_name: formInputs[0].value,
+            username: formInputs[1].value,
+            password: sha256(formInputs[2].value),
+            confirm_password: sha256(formInputs[3].value)
+        }
+        // check if display name have any character beside [a-z] and \s
+        if(formData.display_name.match(/[^a-z\s]/gi)) {
+            return errorMessage.textContent = `any symbol is not allowed! (Name)`
+        }
+        // check if username have any character beside LETTERS and NUMBERS
+        if(formData.username.match(/[^a-z0-9]/gi)) {
+            return errorMessage.textContent = `only letters and numbers allowed! (Username)`
+        }
+        // confirm password
+        if(formData.password !== formData.confirm_password) {
+            return errorMessage.textContent = `password doesn't match!`
+        }
+        errorMessage.textContent = ''
+        // register account
+        // fetch options
+        const registerFetchOptions: RequestInit = {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        } 
+        // fetching api
+        successMessage.textContent = 'loading..'
+        const registerResponse: IResponse = await (await fetcher('/user/register', registerFetchOptions)).json()
+        successMessage.textContent = ''
+        // response api
+        switch(registerResponse.status) {
+            case 201: 
+                successMessage.textContent = 'register success! redirect to home..'
+                errorMessage.textContent = ``
+                setTimeout(() => {
+                    (qS('#return_home') as HTMLButtonElement).click()
+                }, 2000);
+                break
+            default: 
+                errorMessage.textContent = `${registerResponse.status}: ${registerResponse.message}`
+        }
+    } catch (error) {
+        console.log(error);
     }
 }

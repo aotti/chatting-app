@@ -1,15 +1,16 @@
 'use client'
 
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import HomePage from "./components/HomePage"
 import LoginPage from "./components/LoginPage"
 import RegisterPage from "./components/RegisterPage"
 import Profile from "./components/Profile"
-import UserList from "./components/UserList"
+import SearchList from "./components/SearchList"
 import ChattingPage from "./components/ChattingPage"
 import { SearchBox } from "./components/SearchBox"
 import { LoginProfileContext } from "../../context/LoginProfileContext"
 import { MiscContext } from "../../context/MiscContext"
+import CreateGroup from "./components/CreateGroup"
 
 export default function MainContent({ crypto }) {
     // get page for display
@@ -50,9 +51,9 @@ export default function MainContent({ crypto }) {
                         // pageHandler for profile and chat icon
                         showOtherProfile[0]
                             ? /* show other's profile */
-                            <Profile profileClassName="md:w-auto" userData={showOtherProfile[1]} />
+                            <Profile profileClassName="md:w-auto" profileData={showOtherProfile[1]} />
                             : /* back button clicked on other's profile, back to user list */
-                            <UserList crypto={crypto} />
+                            <SearchList crypto={crypto} />
                     }
                 </div>
                 {/* main container */}
@@ -60,17 +61,19 @@ export default function MainContent({ crypto }) {
                     bg-amber-300 dark:bg-emerald-800
                     md:col-span-9">
                     {/* my profile */}
-                    { showMyProfile && <Profile profileClassName="absolute right-2 w-2/3 h-3/4" userData={isLogin[1]} />}
+                    { showMyProfile && <Profile profileClassName="absolute right-2 w-2/3 h-3/4" profileData={isLogin[1]} />}
                     {/* pages container */}
                     <div className="flex items-center justify-center h-screen">
                         {
-                            isLogin[0] && displayPage == 'chatting' 
+                            isLogin[0] && displayPage.match('chatting')
                                 ? <ChattingPage />
                                 : displayPage == 'register'
                                     ? <RegisterPage />
                                     : displayPage == 'login'
                                         ? <LoginPage />
-                                        : <HomePage crypto={crypto} />
+                                        : displayPage == 'create group'
+                                            ? <CreateGroup />
+                                            : <HomePage crypto={crypto} />
                         }
                     </div>
                 </div>

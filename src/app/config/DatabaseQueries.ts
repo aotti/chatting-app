@@ -112,7 +112,7 @@ export class DatabaseQueries {
      * - messages - 
      * - direct_chats - id | user_from | user_to | message_id (user_id, message, created_at, updated_at)
      * - group_chats - 
-     * - group_chat_users - 
+     * - group_chat_users - id, group_chat_id (name), user_id (display_name), role
      * - group_chat_messages - 
      */
     columnSelector(type: string, columns: number) {
@@ -143,7 +143,8 @@ export class DatabaseQueries {
         }
         // for group_chat_users table
         else if(type === 'group_chat_users') {
-            // null
+            const pickerList: string[] = ['id', 'group_chat_id(name)', 'user_id(display_name)', 'role']
+            selectedColumns.push(columnPicker(pickerList))
         }
         // for group_chat_messages table
         else if(type === 'group_chat_messages') {
