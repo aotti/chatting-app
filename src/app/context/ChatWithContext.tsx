@@ -1,11 +1,18 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 import { LoginProfileType } from "./LoginProfileContext";
 import { IMessage } from "../types";
+import { IGroupsFound } from "./UsersFoundContext";
+
+interface IUnreadMessage {
+    display_name: string, 
+    type: string, 
+    unread_messages: string[]
+}
 
 interface IChatWith {
     // user data we are chatting to
-    chatWith: LoginProfileType;
-    setChatWith: Dispatch<SetStateAction<LoginProfileType>>;
+    chatWith: LoginProfileType | IGroupsFound;
+    setChatWith: Dispatch<SetStateAction<LoginProfileType | IGroupsFound>>;
     // current messages
     messageItems: IMessage['messages'];
     setMessageItems: Dispatch<SetStateAction<IMessage['messages']>>;
@@ -13,7 +20,7 @@ interface IChatWith {
     historyMessageLog: IMessage[];
     setHistoryMessageLog: Dispatch<SetStateAction<IMessage[]>>;
     // unread messages
-    unreadMessageItems: {display_name: string, unread_messages: string[]}[];
+    unreadMessageItems: IUnreadMessage[];
     setUnreadMessageItems: Dispatch<SetStateAction<{display_name: string, unread_messages: string[]}[]>>;
     // unread animation
     unreadAnimate: boolean;

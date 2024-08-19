@@ -1,10 +1,10 @@
 import { v2 as cloudinary } from "cloudinary";
 import { Controller } from "../../Controller";
-import { IDirectChatPayload, IImagePayload, IResponse } from "../../../types";
+import { IChatPayload, IImagePayload, IResponse } from "../../../types";
 import filter from "../../filter";
 import { respond } from "../../helper";
 import { randomBytes } from "crypto";
-import { DirectChatController } from "../direct/DirectChatController";
+import { ChatController } from "../ChatController";
 
 cloudinary.config({ 
     secure: true,
@@ -14,9 +14,9 @@ cloudinary.config({
 })
 
 export class ImageController extends Controller {
-    private directChat = new DirectChatController()
+    private chatController = new ChatController()
 
-    async sendImage(action: string, payload: IDirectChatPayload & IImagePayload) {
+    async sendImage(action: string, payload: IChatPayload & IImagePayload) {
         let result: IResponse
         // filter payload
         const filteredPayload = await filter(action, payload)
@@ -42,7 +42,9 @@ export class ImageController extends Controller {
                 payload.message = JSON.stringify(uploadedImage.public_id)
             }
             // response data is number
-            result = await this.directChat.send(action, payload)
+            // send image in group chat
+            if(payload.is_group_chat) result = await this.chatController.sendGroup(action, payload)
+            else result = await this.chatController.sendDirect(action, payload)
             // return response
             return result
         } catch (err) {

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     // get users, token for renew online status
     const result = await groupController.getGroups(action, queryPayload)
     // modify result if theres new access token
-    if(verify?.status === 201)
+    if(verify?.status === 201 && queryPayload.group_name)
         result.data[0] = {...result.data[0], ...verify.data[0]}
     // response from controller
     return NextResponse.json(result, { status: result.status })

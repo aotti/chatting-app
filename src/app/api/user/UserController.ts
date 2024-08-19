@@ -6,7 +6,7 @@ import { NextRequest } from "next/server"
 import { Controller } from "../Controller"
 import { LoginProfileType } from "../../context/LoginProfileContext"
 import AuthController from "../token/AuthController"
-import { DirectChatController } from "../chat/direct/DirectChatController"
+import { ChatController } from "../chat/ChatController"
 import { GroupController } from "../group/GroupController"
 
 export default class UserController extends Controller {
@@ -91,10 +91,10 @@ export default class UserController extends Controller {
                         const getGroupNames = await groupController.getGroups(action, {user_me: selectResponse.data[0].id})
                         // if error, return
                         if(getGroupNames.status !== 200) return getGroupNames
-                        // get unread message
-                        const directChat = new DirectChatController()
+                        // get unread direct message
+                        const chatController = new ChatController()
                         const encryptedData = await encryptData({text: JSON.stringify(selectResponse.data[0])})
-                        const getUnreadMessages = await directChat.unreadMessages('unread dms', {data: encryptedData})
+                        const getUnreadMessages = await chatController.unreadMessages('unread dms', {data: encryptedData})
                         // if error, return
                         if(getUnreadMessages.status !== 200) return getUnreadMessages
                         // remove to prevent last access not updating, the prop not required when login

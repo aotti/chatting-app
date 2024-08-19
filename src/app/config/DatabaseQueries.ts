@@ -5,7 +5,7 @@ export class DatabaseQueries {
     private sb = supabase()
     private prefix = 'chat_app_'
 
-    async db_func<T>(queryObject: IQuerySelect | IQueryInsert | IQueryUpdate) {
+    private async db_func<T>(queryObject: IQuerySelect | IQueryInsert | IQueryUpdate) {
         // order columns
         if(queryObject.order) {
             const { col, by } = queryObject.order

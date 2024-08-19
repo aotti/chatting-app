@@ -2,8 +2,9 @@ import { ChangeEvent, Dispatch, SetStateAction } from "react"
 import { createHash } from "crypto"
 import { LoginProfileType } from "../context/LoginProfileContext"
 import { jwtVerify } from "jose"
-import { ILoggedUsers, IMessage, IResponse, IUserTimeout } from "../types"
+import { ILoggedUsers, IMessage, IResponse, IUnreadMessagePayload, IUserTimeout } from "../types"
 import { decryptData, encryptData } from "../api/helper"
+import { IGroupsFound } from "../context/UsersFoundContext"
 
 /**
  * @param value html tag / id / class
@@ -65,16 +66,16 @@ export async function verifyAccessToken(token: string, secret: string, onlyVerif
     }
 }
 
-export function addMessageItem(data: IMessage[], userMe: LoginProfileType, userWith: LoginProfileType, tempMessages: IMessage['messages'][0]) {
+export function addMessageItem(data: IMessage[], userMe: LoginProfileType, userWith: LoginProfileType | IGroupsFound, tempMessages: IMessage['messages'][0]) {
     // temp message items data
     const tempData = data ? data : []
-    const isTargetExist = tempData.map(v => v.user_with).indexOf(userWith.id)
+    const isTargetExist = tempData.map(v => v.user_with).indexOf(`${userWith.id}`) // group id = number
     // havent chat with this user yet
     if(isTargetExist === -1) {
         // push target data 
         tempData.push({
             user_me: userMe.id, 
-            user_with: userWith.id, 
+            user_with: `${userWith.id}`, // group id = number 
             messages: [tempMessages]
         })
         // return data
@@ -151,14 +152,15 @@ export async function getExpiredUsers(crypto: Record<'key'|'iv', string>, access
     }
 }
 
-export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user: LoginProfileType) {
+export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user: LoginProfileType & IGroupsFound) {
     // access token
     const token = window.localStorage.getItem('accessToken')
     const lastAccess = window.localStorage.getItem('lastAccess')
     // fetch stuff
-    const unreadMessagesPayload = {
-        id: user.id,
+    const unreadMessagesPayload: IUnreadMessagePayload = {
+        user_id: user.id,
         display_name: user.display_name,
+        group_names: user.group.join(','),
         last_access: lastAccess
     }
     const encryptedPayload = await encryptData({text: JSON.stringify(unreadMessagesPayload), key: crypto.key, iv: crypto.iv})
@@ -182,13 +184,13 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
 }
 
 export function modifyUnreadMessages(fetchResponse: IResponse) {
-    const unreadMessagesData = fetchResponse.data[0].unread_messages as Record<'display_name'|'message', string>[]
+    const unreadMessagesData = fetchResponse.data[0].unread_messages as Record<'display_name'|'type'|'message', string>[]
     if(unreadMessagesData.length === 0) return []
     // modify data before return
     const modifiedUnreadMessages = []
     // get only display name
     new Map(unreadMessagesData.map(v => [v['display_name'], v])).forEach(v => {
-        modifiedUnreadMessages.push({ display_name: v['display_name'], unread_messages: [] })
+        modifiedUnreadMessages.push({ display_name: v['display_name'], type: v['type'], unread_messages: [] })
     })
     // push the messages
     for(let data of unreadMessagesData) {

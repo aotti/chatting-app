@@ -1,161 +1,47 @@
-import { Dispatch, DragEvent, FormEvent, SetStateAction, useContext, useEffect, useState } from "react";
+import { Dispatch, DragEvent, FormEvent, SetStateAction, useContext } from "react";
 import { ChatWithContext } from "../../../context/ChatWithContext";
-import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext";
-import { IDirectChatPayload, IImagePayload, IMessage, IResponse } from "../../../types";
+import { LoginProfileType } from "../../../context/LoginProfileContext";
+import { IChatPayload, IImagePayload, IMessage, IResponse } from "../../../types";
 import { addMessageItem, fetcher, qS, qSA } from "../../helper";
-import { ListenerParameters } from "pubnub";
-import { usePubNub } from "pubnub-react";
-import { MiscContext } from "../../../context/MiscContext";
 import LoadingPage from "../../loading";
 import { CldImage, CldUploadWidget } from "next-cloudinary";
 import { randomBytes } from "crypto";
+import { IGroupsFound } from "../../../context/UsersFoundContext";
+import ChattingGroup from "./ChattingGroup";
+import ChattingUser from "./ChattingUser";
 
+type MessageType<T> = Dispatch<SetStateAction<T>>
+type UsersChat = {
+    _me: LoginProfileType;
+    _with: LoginProfileType | IGroupsFound;
+}
+type StatesChat = {
+    setMessageItems: MessageType<IMessage['messages']>;
+    setHistoryMessageLog: MessageType<IMessage[]>;
+}
+type ImagesChat = {
+    img_file: string;
+    size: number;
+    is_uploaded: boolean;
+}
 export default function ChattingPage() {
-    // get page for display
-    const { isLoading } = useContext(MiscContext)
     // chat with context
-    const { chatWith, messageItems, 
-        setMessageItems, setHistoryMessageLog, 
-        unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
-    // login profile context
-    const { isLogin } = useContext(LoginProfileContext)
-    // image preview state
-    const [imageDropPreview, setImageDropPreview] = useState('hidden')
-    const [imageZoomPreview, setImageZoomPreview] = useState('')
-    const [imageChatData, setImageChatData] = useState<ImagesChat>(null)
-    // showUploadWidget
-    const [showUploadWidget, setShowUploadWidget] = useState(true)
-    // profile photo
-    let photoSrc = 'data:,' 
-    if(isLogin[0] && isLogin[1].id === chatWith.id && isLogin[1].photo) photoSrc = isLogin[1].photo
-    else if(chatWith && chatWith.photo) photoSrc = chatWith.photo
-    // // group photo
-    // const groupSrc = isGroupChat ? 'https://res.cloudinary.com/dk5hjh5w5/image/upload/v1723531320/meeting_wxp4ys.png' : null
+    const { chatWith } = useContext(ChatWithContext)
 
-    // upload widget timeout for auto refresh (mobile cant mouseover)
-    useEffect(() => {
-        if(showUploadWidget === false) {
-            setTimeout(() => {
-                setShowUploadWidget(true)
-            }, 1000);
-        }
-    }, [showUploadWidget])
-    // update unread message
-    useEffect(() => {
-        if(unreadMessageItems) {
-            for(let user of unreadMessageItems) {
-                // remove unread message data from the user after read it
-                if(user.display_name === chatWith.display_name)
-                    setUnreadMessageItems(data => data.filter(v => v.display_name !== chatWith.display_name))
-            }
-        }
-    }, [unreadMessageItems])
+    return typeof chatWith.id == 'number'
+        ? <ChattingGroup chatWith={chatWith as IGroupsFound} />
+        : <ChattingUser chatWith={chatWith as LoginProfileType} />
+}
 
-    // message items scroll
-    useEffect(() => {
-        // scroll to bottom
-        const messageContainer = qS('#messageContainer')
-        if(messageContainer) messageContainer.scrollTo({top: messageContainer.scrollHeight})
-    }, [messageItems])
-
-    // pubnub
-    const pubsub = usePubNub()
-    // FOR CHAT AND UNREAD MESSAGES
-    useEffect(() => {
-        // subscribe
-        const dmChannel = `DirectChat-${isLogin[1].id}`
-        pubsub.subscribe({ channels: [dmChannel] })
-        // get published message
-        const publishedMessage: ListenerParameters =  {
-            message: (data) => {
-                const newMessage: IMessage['messages'][0] = data.message
-                // only get other message
-                if(newMessage.user === isLogin[1].display_name) return
-                // make sure chat with the current opened chat user 
-                // add the chat to unread messages
-                if(newMessage.user !== chatWith.display_name) {
-                    return setUnreadMessageItems(data => {
-                        // data > 0
-                        if(data) {
-                            const isUserExist = data.map(v => v.display_name).indexOf(newMessage.user)
-                            // still have unread message from this user
-                            if(isUserExist !== -1) {
-                                const newData = [
-                                    ...data, 
-                                    {
-                                        display_name: newMessage.user, 
-                                        unread_messages: [...data[isUserExist].unread_messages, newMessage.text]
-                                    }
-                                ]
-                                // filter duplicate object
-                                const filterNewData = []
-                                new Map(newData.map(v => [v['display_name'], v])).forEach(v => filterNewData.push(v))
-                                return filterNewData
-                            }
-                            // no unread message from the user
-                            else {
-                                const newData = [...data, {display_name: newMessage.user, unread_messages: [newMessage.text]}]
-                                return newData
-                            }
-                        }
-                        // data still null
-                        else {
-                            const newData = [{
-                                display_name: newMessage.user,
-                                unread_messages: [newMessage.text]
-                            }]
-                            return newData
-                        }
-                    })
-                }
-                // messages data
-                const tempMessages: IMessage['messages'][0] = {
-                    user: newMessage.user,
-                    style: newMessage.style,
-                    text: newMessage.text,
-                    is_image: newMessage.is_image,
-                    time: newMessage.time,
-                    date: newMessage.date,
-                    created_at: newMessage.created_at
-                }
-                // add message from other, only add message if data != null
-                setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
-            }
-        }
-        pubsub.addListener(publishedMessage)
-        // unsub and remove listener
-        return () => {
-            pubsub.unsubscribe({ channels: [dmChannel] })
-            pubsub.removeListener(publishedMessage)
-        }
-    }, [chatWith])
-    // image preview params
-    const imagePreviewStates = {
-        imageChatData: imageChatData,
-        imageDropPreview: imageDropPreview, 
-        setImageDropPreview: setImageDropPreview, 
-        imageZoomPreview: imageZoomPreview,
-        setImageZoomPreview: setImageZoomPreview
-    }
-    // send chat params
-    const userChatData: UsersChat = {_me: isLogin[1], _with: chatWith};
-    const sendChatStates: StatesChat = {
-        setMessageItems: setMessageItems, 
-        setHistoryMessageLog: setHistoryMessageLog
-    };
+export function ChattingBox({ chatStates, imagePreviewStates, userChatData, sendChatStates, widgetStates }) {
+    const { isLoading, isLogin, chatWith, messageItems } = chatStates
+    const { setImageDropPreview, setImageChatData, setImageZoomPreview } = imagePreviewStates
+    const { showUploadWidget, setShowUploadWidget } = widgetStates
 
     return (
         <div className="grid grid-rows-10 w-full h-screen p-2">
-            {/* user */}
-            <div className="flex justify-center gap-4">
-                <div className={photoSrc == 'data:,' ? 'rounded-full border border-black dark:border-white' : ''}>
-                    <CldImage src={photoSrc} alt="pfp" width={60} height={60} radius={'max'}/>
-                </div>
-                <div className="">
-                    <p> {chatWith.display_name} </p>
-                    <p> {chatWith.is_login} </p>
-                </div>
-            </div>
+            {/* user|group profile */}
+            <ChattingProfile chatWith={chatWith} isLogin={isLogin} />
             {/* chat box */}
             <div className="flex items-end row-span-8 border-b border-t border-black dark:border-white" 
                 onDrop={ev => previewImage(ev, setImageDropPreview, setImageChatData)} onDragOver={ev => imageDragOver(ev, setImageDropPreview)} onDragLeave={() => imageDragLeave(setImageDropPreview, setImageZoomPreview)}>
@@ -163,9 +49,9 @@ export default function ChattingPage() {
                     isLoading
                         ? <LoadingPage />
                         : messageItems
-                            ? <Messages historyMessages={messageItems} imagePreviewStates={imagePreviewStates} />
+                            ? <Messages messageItems={messageItems} imagePreviewStates={imagePreviewStates} />
                             // if null, show empty chat box
-                            : <Messages historyMessages={messageItems} firstMessage={true} imagePreviewStates={imagePreviewStates} />
+                            : <Messages messageItems={messageItems} firstMessage={true} imagePreviewStates={imagePreviewStates} />
                 }
                 <ImagePreview imagePreviewStates={imagePreviewStates} userChatData={userChatData} sendChatStates={sendChatStates} />
             </div>
@@ -186,7 +72,7 @@ export default function ChattingPage() {
                                 widget.close()
                                 setShowUploadWidget(false)
                                 // send image chat
-                                const tempImageChatData: ImagesChat = { base64_file: result.info['public_id'], size: result.info['bytes'], is_uploaded: true }
+                                const tempImageChatData: ImagesChat = { img_file: result.info['public_id'], size: result.info['bytes'], is_uploaded: true }
                                 await sendChat(null, userChatData, sendChatStates, tempImageChatData);
                             }}>
                             {({ open }) => {
@@ -208,8 +94,35 @@ export default function ChattingPage() {
     )
 }
 
-function Messages({ historyMessages, firstMessage, imagePreviewStates }: {historyMessages: IMessage['messages']; firstMessage?: boolean; imagePreviewStates: any}) {
-    if(firstMessage && !historyMessages) {
+export function ChattingProfile({ isLogin, chatWith }: {isLogin: [boolean, LoginProfileType], chatWith /* LoginProfileType | IGroupsFound */}) {
+    // profile photo
+    let photoSrc = 'data:,' 
+    // check chat with data
+    if(typeof chatWith.id == 'number') {
+        // group photo
+        photoSrc = 'https://res.cloudinary.com/dk5hjh5w5/image/upload/v1723531320/meeting_wxp4ys.png'
+    }
+    else {
+        // user photo
+        if(isLogin[0] && isLogin[1].id === chatWith.id && isLogin[1].photo) photoSrc = isLogin[1].photo
+        else if(chatWith && chatWith.photo) photoSrc = chatWith.photo
+    }
+
+    return (
+        <div className="flex justify-center gap-4">
+            <div className={photoSrc == 'data:,' ? 'rounded-full border border-black dark:border-white' : ''}>
+                <CldImage src={photoSrc} alt="pfp" width={60} height={60} radius={'max'}/>
+            </div>
+            <div className="">
+                <p> {chatWith.name || chatWith.display_name} </p>
+                <p> {chatWith.member_count ? `${chatWith.member_count} member(s)` : chatWith.is_login} </p>
+            </div>
+        </div>
+    )
+}
+
+function Messages({ messageItems, firstMessage, imagePreviewStates }: {messageItems: IMessage['messages']; firstMessage?: boolean; imagePreviewStates}) {
+    if(firstMessage && !messageItems) {
         return (
             // message container
             <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll"></div>
@@ -217,7 +130,7 @@ function Messages({ historyMessages, firstMessage, imagePreviewStates }: {histor
     }
     // filter messages
     const _filteredMessages: IMessage['messages'] = []
-    new Map(historyMessages.map(v => [v['created_at'], v])).forEach(v => _filteredMessages.push(v))
+    new Map(messageItems.map(v => [v['created_at'], v])).forEach(v => _filteredMessages.push(v))
     // get dates
     const dateMessages: IMessage['messages'] = []
     new Map(_filteredMessages.map(v => [v['date'], v])).forEach(v => dateMessages.push(v))
@@ -335,22 +248,11 @@ function ImagePreview({ imagePreviewStates, userChatData = null, sendChatStates 
 
 // ~~~~~~~ FUNCTIONS ~~~~~~~
 // ~~~~~~~ FUNCTIONS ~~~~~~~
-type MessageType<T> = Dispatch<SetStateAction<T>>
-type UsersChat = Record<'_me'|'_with', LoginProfileType>
-type StatesChat = {
-    setMessageItems: MessageType<IMessage['messages']>;
-    setHistoryMessageLog: MessageType<IMessage[]>;
-}
-type ImagesChat = {
-    base64_file: string;
-    size: number;
-    is_uploaded: boolean;
-}
 async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: UsersChat, sendChatStates: StatesChat, image?: ImagesChat) {
     ev?.preventDefault()
     // form inputs
     // filter button elements
-    const formInputs = image ? [{value: image?.base64_file}] : ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
+    const formInputs = image ? [{value: image?.img_file}] : ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
     // check input empty
     if(!formInputs[0].value) return
     // check image size, 2MB limit
@@ -366,12 +268,16 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
     const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
     // can be use for DM (direct msg) / GM (group msg)
-    const formData: IDirectChatPayload & IImagePayload = {
+    const formData: IChatPayload & IImagePayload = {
         // author is user_id
-        user_me: _me.id,
+        user_me: _me.id, // user id
         display_me: _me.display_name,
-        user_with: _with.id, // dm = user, gm = group id
+        // group = group id + invite link | dm = user id
+        user_with: typeof _with.id == 'number' 
+                ? `${_with.id}_${(_with as IGroupsFound).name}` 
+                : (_with as LoginProfileType).id, 
         message: JSON.stringify(formInputs[0].value),
+        is_group_chat: typeof _with.id == 'number' ? true : false,
         is_image: image ? true : false,
         is_uploaded: !image ? false : image.is_uploaded, // !image to make sure the text message will always be FALSE
         image_size: image ? image.size : 0,
@@ -411,7 +317,11 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         body: JSON.stringify(formData)
     }
     // if image exist, then use image endpoint, else direct chat
-    const apiEndpoint = image ? '/chat/image' : '/chat/direct'
+    const apiEndpoint = image 
+                        ? '/chat/image' 
+                        : typeof _with.id == 'number' 
+                            ? '/chat/group'
+                            : '/chat/direct'
     // fetching
     const messageFetch: IResponse = await (await fetcher(apiEndpoint, messageFetchOptions)).json()
     console.log(messageFetch);
@@ -466,7 +376,7 @@ function previewImage(ev: DragEvent, setImageDropPreview, setImageChatData) {
                 // set image src
                 imageElement.src = reader.result as string
                 imageElement.dataset.size = imageFile.size.toString()
-                setImageChatData({ base64_file: imageElement.src, size: imageFile.size, is_uploaded: false })
+                setImageChatData({ img_file: imageElement.src, size: imageFile.size, is_uploaded: false })
                 // display image
                 setImageDropPreview('flex')
             }

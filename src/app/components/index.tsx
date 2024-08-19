@@ -81,7 +81,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
     }
 
     // chat with context
-    const [chatWith, setChatWith] = useState<LoginProfileType>(null)
+    const [chatWith, setChatWith] = useState<LoginProfileType | IGroupsFound>(null)
     // message items
     const [messageItems, setMessageItems] = useState<IMessage['messages']>(null)
     // history message log
@@ -122,7 +122,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
             const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
             (verifiedUser as LoginProfileType).group = groupNames
             // get unread message
-            const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType))
+            const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType & IGroupsFound))
             setUnreadMessageItems(unreadMessages)
             // set state
             setIsLogin([true, verifiedUser as LoginProfileType])
@@ -138,13 +138,13 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                     const getAccessToken = renewAccessToken.data[0].token
                     // verify token
                     const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
+                    // save token to local storage
+                    window.localStorage.setItem('accessToken', getAccessToken)
                     // get group names
                     const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
                     (verifiedUser as LoginProfileType).group = groupNames
-                    // save token to local storage
-                    window.localStorage.setItem('accessToken', getAccessToken)
                     // get unread message
-                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType))
+                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType & IGroupsFound))
                     setUnreadMessageItems(unreadMessages)
                     // set state
                     setIsLogin([true, verifiedUser as LoginProfileType])
@@ -226,7 +226,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                 }
                 
                 // change chat with user status (status on chatting page)
-                const chatUser = chatWith ? expiredUsers.map(v => v.id).indexOf(chatWith.id) : -1
+                const chatUser = chatWith ? expiredUsers.map(v => v.id).indexOf((chatWith as LoginProfileType).id) : -1
                 // user not found
                 if(chatUser === -1) return
                 // chat user is away

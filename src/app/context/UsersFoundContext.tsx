@@ -6,7 +6,8 @@ export interface IGroupsFound {
     name: string;
     description: string;
     invite_code: string;
-    display_name: string;
+    member_ids: string;
+    member_names: string;
     member_count: number;
     created_at: string;
 }

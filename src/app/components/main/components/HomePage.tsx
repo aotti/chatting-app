@@ -5,8 +5,8 @@ import { ChatWithContext } from "../../../context/ChatWithContext"
 import { usePubNub } from "pubnub-react";
 import { ListenerParameters } from "pubnub";
 import { IMessage } from "../../../types";
-import { searchUsername } from "./SearchBox";
-import { historyUserChat } from "./SearchList";
+import { searchGroupname, searchUsername } from "./SearchBox";
+import { historyChat } from "./SearchList";
 import { UsersFoundContext } from "../../../context/UsersFoundContext";
 import LoadingPage from "../../loading";
 
@@ -50,8 +50,10 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
     // ONLY FOR UNREAD MESSAGES
     useEffect(() => {
         // subscribe
-        const dmChannel = `DirectChat-${isLogin[1].id}`
-        pubsub.subscribe({ channels: [dmChannel] })
+        const groupChannels = isLogin[1].group.length === 0 ? [] : isLogin[1].group.map(v => `GroupChat-${v}`)
+        const dmChannels = [`DirectChat-${isLogin[1].id}`]
+        const subsChannels = [...dmChannels, ...groupChannels]
+        pubsub.subscribe({ channels: subsChannels })
         // get published message
         const publishedMessage: ListenerParameters =  {
             message: (data) => {
@@ -60,15 +62,16 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                 if(newMessage.user === isLogin[1].display_name) return
                 // add the chat to unread messages
                 setUnreadMessageItems(data => {
+                    const displayName = newMessage.group_name || newMessage.user
                     // data > 0
                     if(data) {
-                        const isUserExist = data.map(v => v.display_name).indexOf(newMessage.user)
+                        const isUserExist = data.map(v => v.display_name).indexOf(displayName)
                         // still have unread message from this user
                         if(isUserExist !== -1) {
                             const newData = [
                                 ...data, 
                                 {
-                                    display_name: newMessage.user, 
+                                    display_name: displayName, 
                                     unread_messages: [...data[isUserExist].unread_messages, newMessage.text]
                                 }
                             ]
@@ -79,14 +82,14 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                         }
                         // no unread message from the user
                         else {
-                            const newData = [...data, {display_name: newMessage.user, unread_messages: [newMessage.text]}]
+                            const newData = [...data, {display_name: displayName, unread_messages: [newMessage.text]}]
                             return newData
                         }
                     }
                     // data still null
                     else {
                         const newData = [{
-                            display_name: newMessage.user,
+                            display_name: displayName,
                             unread_messages: [newMessage.text]
                         }]
                         return newData
@@ -97,7 +100,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
         pubsub.addListener(publishedMessage)
         // unsub and remove listener
         return () => {
-            pubsub.unsubscribe({ channels: [dmChannel] })
+            pubsub.unsubscribe({ channels: subsChannels })
             pubsub.removeListener(publishedMessage)
         }
     }, [])
@@ -116,11 +119,15 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                                 <div className="mb-2" key={i}>
                                     <span> {`${v.display_name} - ${v.unread_messages.length} messages`} </span>
                                     <button className="dark:text-lime-300 text-pink-600 font-semibold" onClick={async (ev) => {
+                                        // set page to loading
                                         setIsLoading(true)
-                                        // find user
-                                        const getChatWith = await searchUsername(ev as any, setUsersFound, setChatWith, v.display_name);
+                                        let getChatWith = null
+                                        // find user data
+                                        if(v.type == 'user') getChatWith = await searchUsername(ev as any, setUsersFound, setChatWith, v.display_name);
+                                        // find group data
+                                        else if(v.type == 'group') getChatWith = await searchGroupname(ev as any, setUsersFound, setChatWith, v.display_name);
                                         // get history message
-                                        await historyUserChat(isLogin[1], getChatWith, crypto, historyUserChatStates)
+                                        await historyChat(isLogin[1], getChatWith, crypto, historyUserChatStates)
                                         // display chat box
                                         setDisplayPage('chatting');
                                     }}> {'[read]'} </button>

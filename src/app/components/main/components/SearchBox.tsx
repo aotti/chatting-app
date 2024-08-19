@@ -99,7 +99,7 @@ export async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFou
         // access token
         const token = window.localStorage.getItem('accessToken')
         // error message
-        const errorMessage = qS('#search_message')
+        const searchMessage = qS('#search_message')
         // form inputs
         // filter button elements
         const formInputs = username ? [{value: username}] : ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
@@ -114,12 +114,12 @@ export async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFou
             }
         }
         // fetching
-        errorMessage.textContent = 'searching..'
+        searchMessage.textContent = 'searching..'
         const searchResponse: IResponse = await (await fetcher(`/user?display_name=${usernameInput}`, searchFetchOptions)).json()
         // response
         switch(searchResponse.status) {
             case 200:
-                errorMessage.textContent = ``
+                searchMessage.textContent = ``
                 // update access token if exist
                 if(searchResponse.data[0]?.token) {
                     window.localStorage.setItem('accessToken', searchResponse.data[0].token)
@@ -135,7 +135,7 @@ export async function searchUsername(ev: FormEvent<HTMLFormElement>, setUsersFou
                 setUsersFound(searchResponse.data)
                 break
             default:
-                errorMessage.textContent = `${searchResponse.status}: ${JSON.stringify(searchResponse.message)}`
+                searchMessage.textContent = `${searchResponse.status}: ${JSON.stringify(searchResponse.message)}`
         }
     } catch (error) {
         console.log(error);
@@ -149,7 +149,7 @@ export async function searchGroupname(ev: FormEvent<HTMLFormElement>, setGroupsF
         // access token
         const token = window.localStorage.getItem('accessToken')
         // error message
-        const errorMessage = qS('#search_message')
+        const searchMessage = qS('#search_message')
         // form inputs
         // filter button elements
         const formInputs = groupname ? [{value: groupname}] : ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
@@ -164,12 +164,12 @@ export async function searchGroupname(ev: FormEvent<HTMLFormElement>, setGroupsF
             }
         }
         // fetching
-        errorMessage.textContent = 'searching..'
+        searchMessage.textContent = 'searching..'
         const searchResponse: IResponse = await (await fetcher(`/group?group_name=${groupnameInput}`, searchFetchOptions)).json()
         // response
         switch(searchResponse.status) {
             case 200:
-                errorMessage.textContent = ``
+                searchMessage.textContent = ``
                 // update access token if exist
                 if(searchResponse.data[0]?.token) {
                     window.localStorage.setItem('accessToken', searchResponse.data[0].token)
@@ -185,7 +185,7 @@ export async function searchGroupname(ev: FormEvent<HTMLFormElement>, setGroupsF
                 setGroupsFound(searchResponse.data)
                 break
             default:
-                errorMessage.textContent = `${searchResponse.status}: ${JSON.stringify(searchResponse.message)}`
+                searchMessage.textContent = `${searchResponse.status}: ${JSON.stringify(searchResponse.message)}`
         }
     } catch (error) {
         console.log(error);
@@ -203,7 +203,7 @@ async function joinGroup(ev: FormEvent<HTMLFormElement>, userMe: LoginProfileTyp
         // token null, STOP
         if(!token) return
         // error message
-        const errorMessage = qS('#search_message')
+        const searchMessage = qS('#search_message')
         // form inputs
         // filter button elements
         const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
@@ -223,15 +223,15 @@ async function joinGroup(ev: FormEvent<HTMLFormElement>, userMe: LoginProfileTyp
             })
         }
         // fetching
-        errorMessage.textContent = 'joining..'
+        searchMessage.textContent = 'joining..'
         const joinResponse: IResponse = await (await fetcher(`/group/join`, joinFetchOptions)).json()
         console.log(joinResponse);
         
         // response
         switch(joinResponse.status) {
             case 200:
-                errorMessage.textContent = `success joining group!`
-                setTimeout(() => { errorMessage.textContent = `` }, 3000);
+                searchMessage.textContent = `success joining group!`
+                setTimeout(() => { searchMessage.textContent = `` }, 3000);
                 // update access token if exist
                 if(joinResponse.data[0]?.token) {
                     window.localStorage.setItem('accessToken', joinResponse.data[0].token)
@@ -248,10 +248,10 @@ async function joinGroup(ev: FormEvent<HTMLFormElement>, userMe: LoginProfileTyp
                 // check db error P0001 (function error)
                 const resErrorMessage = joinResponse.message as any
                 if(resErrorMessage.code == 'P0001') {
-                    errorMessage.textContent = `${resErrorMessage.code}: ${resErrorMessage.message}`
+                    searchMessage.textContent = `${resErrorMessage.code}: ${resErrorMessage.message}`
                     break
                 }
-                errorMessage.textContent = `${joinResponse.status}: ${JSON.stringify(joinResponse.message)}`
+                searchMessage.textContent = `${joinResponse.status}: ${JSON.stringify(joinResponse.message)}`
         }
     } catch (error) {
         console.log(error);

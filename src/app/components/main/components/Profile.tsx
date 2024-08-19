@@ -146,7 +146,7 @@ function GroupProfile({ profileClassName, profileData }: IProfile<IGroupsFound>)
             <div className="font-semibold">
                 {/* show invite code for admin & member */}
                 <p> 
-                    Creator: {profileData.display_name} 
+                    Creator: {profileData.member_names.split(', ')[0]} 
                     {isLogin[1].group.indexOf(profileData.name) !== -1 ? ` - ${profileData.invite_code}` : ''} 
                 </p>
                 <p> Since: {new Date(profileData.created_at).toLocaleDateString(['id'], {day: '2-digit', month: '2-digit', year: 'numeric'})} </p>

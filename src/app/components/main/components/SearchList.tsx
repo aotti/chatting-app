@@ -4,7 +4,7 @@ import { LoginProfileContext, LoginProfileType } from "../../../context/LoginPro
 import { ChatWithContext } from "../../../context/ChatWithContext"
 import { IHistoryMessagePayload, IMessage, IResponse } from "../../../types"
 import { encryptData } from "../../../api/helper"
-import { addMessageItem, fetcher } from "../../helper"
+import { addMessageItem, fetcher, qS } from "../../helper"
 import { MiscContext } from "../../../context/MiscContext"
 
 interface ISearchList {
@@ -66,7 +66,7 @@ function UserList({ crypto }) {
                                         // open chat box
                                         startChat(isLogin, setChatWith, user, setDisplayPage);
                                         // retrieve chat history
-                                        if(isLogin[1]) await historyUserChat(isLogin[1], user, crypto, historyChatStates);
+                                        if(isLogin[1]) await historyChat(isLogin[1], user, crypto, historyChatStates);
                                     }}>
                                     <img src="./img/send.png" alt="chat" width={30} />
                                 </button>
@@ -120,12 +120,18 @@ function GroupList({ crypto }) {
                                 {/* chat button */}
                                 <button title="chat" className="invert dark:invert-0" 
                                     onClick={async () => {
+                                        // check if you are member of this group
+                                        if(isLogin[1].group.indexOf(group.name) === -1) {
+                                            qS('#search_message').textContent = 'you are not member of the group!'
+                                            setTimeout(() => { qS('#search_message').textContent = '' }, 3000);
+                                            return
+                                        }
                                         // set loading until chat history retrieved
                                         setIsLoading(true)
                                         // open chat box
                                         startChat(isLogin, setChatWith, group, setDisplayPage);
                                         // retrieve chat history
-                                        if(isLogin[1]) await historyGroupChat(isLogin[1], group, crypto, historyChatStates);
+                                        if(isLogin[1]) await historyChat(isLogin[1], group, crypto, historyChatStates);
                                     }}>
                                     <img src="./img/send.png" alt="chat" width={30} />
                                 </button>
@@ -154,13 +160,13 @@ interface IHistoryChat {
     setHistoryMessageLog: MessageType<IMessage[]>;
     setIsLoading: MessageType<boolean>;
 }
-export async function historyUserChat(userMe: LoginProfileType, userWith: LoginProfileType, crypto: ISearchList['crypto'], historyChatStates: IHistoryChat) {
+export async function historyChat(userMe: LoginProfileType, userWith: LoginProfileType | IGroupsFound, crypto: ISearchList['crypto'], historyChatStates: IHistoryChat) {
     const { setMessageItems, historyMessageLog, setHistoryMessageLog, setIsLoading } = historyChatStates
     // set message items to NULL each time open Direct Message
     setMessageItems(null)
     // check new history message to prevent fetching too much to database
     if(historyMessageLog.length > 0) {
-        const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(userWith.id)
+        const checkUserHistory = historyMessageLog.map(v => v.user_with).indexOf(`${userWith.id}`)
         // if user message is logged
         if(checkUserHistory !== -1) {
             // end the loading page
@@ -172,7 +178,12 @@ export async function historyUserChat(userMe: LoginProfileType, userWith: LoginP
     // access token
     const token = window.localStorage.getItem('accessToken')
     // fetch stuff
-    const historyPayload: IHistoryMessagePayload = {
+    const historyPayload: Partial<IHistoryMessagePayload> = typeof userWith.id == 'number' 
+    ? {
+        user_with: `${userWith.id}`,
+        amount: 100
+    }
+    : {
         user_me: userMe.id,
         user_with: userWith.id,
         amount: 100
@@ -185,16 +196,32 @@ export async function historyUserChat(userMe: LoginProfileType, userWith: LoginP
         }
     }
     // fetching
-    const historyResponse: IResponse = await (await fetcher(`/chat/direct?data=${encryptedHistoryPayload}`, historyFetchOptions)).json()
+    const apiEndpoint = typeof userWith.id == 'number' ? '/chat/group' : '/chat/direct'
+    const historyResponse: IResponse = await (await fetcher(`${apiEndpoint}?data=${encryptedHistoryPayload}`, historyFetchOptions)).json()
     // response
     switch(historyResponse.status) {
         case 200: 
             const hisResData = historyResponse.data as IHistoryMessagePayload['message_id'][]
             // loop response data
             for(let hrd of hisResData) {
+                const groupMemberIds = typeof userWith.id == 'number' 
+                                        ? (userWith as IGroupsFound).member_ids.split(', ')
+                                        : null
+                const groupMemberNames = typeof userWith.id == 'number' 
+                                        ? (userWith as IGroupsFound).member_names.split(', ')
+                                        : null
+                const getGroupDisplayName = typeof userWith.id == 'number' 
+                                        ? groupMemberIds.indexOf(hrd.user_id)
+                                        : null
+                // get user display name
+                const displayName = userMe.id === hrd.user_id 
+                                    ? userMe.display_name
+                                    : getGroupDisplayName != null && getGroupDisplayName !== -1
+                                        ? groupMemberNames[getGroupDisplayName]
+                                        : (userWith as LoginProfileType).display_name
                 // create message object
                 const tempMessages: IMessage['messages'][0] = {
-                    user: userMe.id === hrd.user_id ? userMe.display_name : userWith.display_name,
+                    user: displayName,
                     style: userMe.id === hrd.user_id ? 'justify-end' : 'justify-start',
                     text: hrd.message,
                     is_image: hrd.is_image,
@@ -215,8 +242,4 @@ export async function historyUserChat(userMe: LoginProfileType, userWith: LoginP
             console.log(historyResponse)
             break
     }
-}
-
-export async function historyGroupChat(userMe: LoginProfileType, userWith: IGroupsFound, crypto: ISearchList['crypto'], historyChatStates: IHistoryChat) {
-    
 }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { api_action, verifyUserTokens } from "../../helper";
-import { DirectChatController } from "../../chat/direct/DirectChatController";
+import { verifyUserTokens } from "../../helper";
+import { ChatController } from "../../chat/ChatController";
 
-const directChat = new DirectChatController()
+const chatController = new ChatController()
 
 export async function GET(req: NextRequest) {
     // create api action
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(verify, { status: verify.status })
     }
     // get unread messages
-    const result = await directChat.unreadMessages(action, queryPayload)
+    const result = await chatController.unreadMessages(action, queryPayload)
     // no need to return new access token
     // return response
     return NextResponse.json(result, { status: result.status })

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { api_action, verifyUserTokens } from "../../helper";
+import { NextRequest, NextResponse } from "next/server"
 import { ChatController } from "../ChatController";
+import { api_action, verifyUserTokens } from "../../helper";
 
 const chatController = new ChatController()
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(verify, { status: verify.status })
     }
     // send chat result
-    const result = await chatController.historyDirectMessages(action, queryPayload)
+    const result = await chatController.historyGroupMessages(action, queryPayload)
     // modify result if theres new access token
     if(verify.status === 201)
         result.data[0] = {...result.data[0], ...verify.data[0]}
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(verify, { status: verify.status })
     }
     // send chat result, token for renew online status
-    const result = await chatController.sendDirect(action, bodyPayload, verify.data[0].token)
+    const result = await chatController.sendGroup(action, bodyPayload, verify.data[0].token)
     // modify result if theres new access token
     if(verify.status === 201)
         result.data[0] = {...result.data[0], ...verify.data[0]}
