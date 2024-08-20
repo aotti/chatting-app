@@ -127,36 +127,40 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
             // set state
             setIsLogin([true, verifiedUser as LoginProfileType])
         }).catch(async error => {
-            // token expired
-            // create new access token
-            const accessTokenOptions: RequestInit = { method: 'GET' }
-            const renewAccessToken: IResponse = await (await fetcher('/token', accessTokenOptions)).json()
-            // response api
-            switch(renewAccessToken.status) {
-                case 201: 
-                    // get access token
-                    const getAccessToken = renewAccessToken.data[0].token
-                    // verify token
-                    const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
-                    // save token to local storage
-                    window.localStorage.setItem('accessToken', getAccessToken)
-                    // get group names
-                    const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
-                    (verifiedUser as LoginProfileType).group = groupNames
-                    // get unread message
-                    const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType & IGroupsFound))
-                    setUnreadMessageItems(unreadMessages)
-                    // set state
-                    setIsLogin([true, verifiedUser as LoginProfileType])
-                    break
-                default: 
-                    // remove access token & last access if fail to renew
-                    window.localStorage.removeItem('accessToken')
-                    window.localStorage.removeItem('lastAccess')
-                    // stop loading page
-                    setIsLoading(false)
-                    console.log(renewAccessToken)
-                    break
+            try {
+                // token expired
+                // create new access token
+                const accessTokenOptions: RequestInit = { method: 'GET' }
+                const renewAccessToken: IResponse = await (await fetcher('/token', accessTokenOptions)).json()
+                // response api
+                switch(renewAccessToken.status) {
+                    case 201: 
+                        // get access token
+                        const getAccessToken = renewAccessToken.data[0].token
+                        // verify token
+                        const verifiedUser = await verifyAccessToken(getAccessToken, accessSecret)
+                        // save token to local storage
+                        window.localStorage.setItem('accessToken', getAccessToken)
+                        // get group names
+                        const groupNames = await getGroupNames(verifiedUser as LoginProfileType);
+                        (verifiedUser as LoginProfileType).group = groupNames
+                        // get unread message
+                        const unreadMessages = await getUnreadMessages(crypto, (verifiedUser as LoginProfileType & IGroupsFound))
+                        setUnreadMessageItems(unreadMessages)
+                        // set state
+                        setIsLogin([true, verifiedUser as LoginProfileType])
+                        break
+                    default: 
+                        // remove access token & last access if fail to renew
+                        window.localStorage.removeItem('accessToken')
+                        window.localStorage.removeItem('lastAccess')
+                        // stop loading page
+                        setIsLoading(false)
+                        console.log(renewAccessToken)
+                        break
+                }
+            } catch (err) {
+                console.log('refresh token not found')
             }
         })
         return () => null
@@ -263,14 +267,17 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
             }
         }
 
-        document.addEventListener('click', updateUserStatus)
-        document.addEventListener('keyup', updateUserStatus)
-        document.addEventListener('blur', updateStatusAndLastAccess)
+        // if not logged in, dont do any event
+        document.body.tabIndex = 0
+        if(!isLogin[0]) return
+        document.body.addEventListener('click', updateUserStatus)
+        document.body.addEventListener('keyup', updateUserStatus)
+        document.body.addEventListener('blur', updateStatusAndLastAccess)
 
         return () => {
-            document.removeEventListener('click', updateUserStatus)
-            document.removeEventListener('keyup', updateUserStatus)
-            document.removeEventListener('blur', updateStatusAndLastAccess)
+            document.body.removeEventListener('click', updateUserStatus)
+            document.body.removeEventListener('keyup', updateUserStatus)
+            document.body.removeEventListener('blur', updateStatusAndLastAccess)
         }
     }, [usersFound, chatWith, isLogin, userTimeout])
     

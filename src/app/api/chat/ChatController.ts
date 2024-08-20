@@ -256,7 +256,7 @@ export class ChatController extends Controller {
                 table: 'direct_chats & messages & users',
                 function: 'get_unread_dms', // dms = direct messages
                 function_args: {
-                    user_me: parsePayload.user_id, // uuid
+                    user_me: parsePayload?.user_id || parsePayload['id'], // uuid
                     last_online: parsePayload.last_access // timestampz
                 }
             }
@@ -281,7 +281,7 @@ export class ChatController extends Controller {
                 table: 'group_chats & group_chat_messages & messages',
                 function: 'get_unread_gms', // gms = group_chat_messages
                 function_args: {
-                    group_names: parsePayload.group_names, // uuid
+                    group_names: parsePayload?.group_names || '', // uuid
                     last_online: parsePayload.last_access // timestampz
                 }
             }

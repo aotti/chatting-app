@@ -58,7 +58,7 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
             </p>
             {/* profile picture */}
             <div className="flex gap-2">
-                <CldImage src={photoSrc} alt="pic 160x160" loading="lazy" className="border-2" width={160} height={160} />
+                <CldImage src={photoSrc} alt="pic 160x160" loading="lazy" className="border-2 border-black dark:border-white" width={160} height={160} />
                 { 
                     isLogin[0] && profileData.id === isLogin[1].id 
                         ? <div className="self-center">

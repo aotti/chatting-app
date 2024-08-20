@@ -103,8 +103,6 @@ export default class UserController extends Controller {
                         result = await this.lastAccess(action, selectResponse.data[0], req)
                         // combine user profile & unread messages
                         result.data[0] = {...result.data[0], group: getGroupNames.data, ...getUnreadMessages.data[0]}
-                        console.log('login result', result);
-                        
                     }
                 }
             }
