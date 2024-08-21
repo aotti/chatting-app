@@ -11,15 +11,15 @@ import ChattingGroup from "./ChattingGroup";
 import ChattingUser from "./ChattingUser";
 
 type MessageType<T> = Dispatch<SetStateAction<T>>
-type UsersChat = {
+export type UsersChat = {
     _me: LoginProfileType;
     _with: LoginProfileType | IGroupsFound;
 }
-type StatesChat = {
+export type StatesChat = {
     setMessageItems: MessageType<IMessage['messages']>;
     setHistoryMessageLog: MessageType<IMessage[]>;
 }
-type ImagesChat = {
+export type ImagesChat = {
     img_file: string;
     size: number;
     is_uploaded: boolean;
@@ -179,16 +179,15 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
                     {/* author & status*/}
                     <p className="text-xs flex justify-between gap-2"> 
                         <span className="mb-1"> {msgItem.user} </span>
-                        <span id="messageStatus" className="brightness-150"> 
+                        <span className="brightness-150" data-created={msgItem.created_at}> 
                             {   // for incoming messages
                                 msgItem.style.includes('start') 
                                     ? '✔' 
                                     // check message item created_at 
                                     // if past the current time consider delivered
-                                    : currentTime > msgItem.created_at 
+                                    : currentTime > msgItem.created_at
                                         ? '✔' 
-                                        // if no, the its delivering
-                                        : '🕗' 
+                                        : '🕗'
                             } 
                         </span>
                     </p>
@@ -268,6 +267,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
     const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
     // can be use for DM (direct msg) / GM (group msg)
+    const currentDate = new Date().toISOString()
     const formData: IChatPayload & IImagePayload = {
         // author is user_id
         user_me: _me.id, // user id
@@ -283,7 +283,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         image_size: image ? image.size : 0,
         time: messageTime,
         date: messageDate,
-        created_at: new Date().toISOString()
+        created_at: currentDate
     }
     // check message empty, trim to clear all useless whitespace
     if(!formData.message.trim()) return
@@ -295,7 +295,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         is_image: image ? true : false,
         time: messageTime,
         date: messageDate,
-        created_at: new Date().toISOString()
+        created_at: currentDate
     }
     // check if data null
     setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
@@ -325,14 +325,16 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     // fetching
     const messageFetch: IResponse = await (await fetcher(apiEndpoint, messageFetchOptions)).json()
     console.log(messageFetch);
-    // message elements
-    const messageStatus = qSA('#messageStatus')
     
     // response
     switch(messageFetch.status) {
         case 200: 
             // change message status
-            messageStatus[messageStatus.length-1].textContent = '✔'
+            const getMessageStatus = qSA('[data-created]')
+            getMessageStatus.forEach((v: HTMLSpanElement) => {
+                if(v.dataset.created == currentDate)
+                    v.textContent = '✔'
+            })
             // check new access token
             if(messageFetch.data[0].token) {
                 // save token to local storage
@@ -342,7 +344,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
             }
             break
         default: 
-            messageStatus[messageStatus.length-1].textContent = '⚠'
+            break
     }
 }
 

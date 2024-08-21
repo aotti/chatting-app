@@ -31,10 +31,7 @@ export class GroupController extends Controller {
             else if(selectResponse.error === null) {
                 // login case
                 if(selectResponse.data[0]?.group_chat_id?.name) {
-                    // modify array object literal to array string
-                    const groupNames = selectResponse.data.map(v => v.group_chat_id.name)
-                    // return array string
-                    result = await respond(200, `${action} success`, groupNames)
+                    result = await respond(200, `${action} success`, selectResponse.data)
                 }
                 // search group case
                 else {

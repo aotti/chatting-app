@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { MiscContext } from "../../../context/MiscContext"
 import { ChatWithContext } from "../../../context/ChatWithContext"
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
@@ -6,23 +6,7 @@ import { qS } from "../../helper"
 import { usePubNub } from "pubnub-react"
 import { ListenerParameters } from "pubnub"
 import { IMessage } from "../../../types"
-import { IGroupsFound } from "../../../context/UsersFoundContext"
-import { ChattingBox } from "./ChattingPage"
-
-type MessageType<T> = Dispatch<SetStateAction<T>>
-type ImagesChat = {
-    base64_file: string;
-    size: number;
-    is_uploaded: boolean;
-}
-type UsersChat = {
-    _me: LoginProfileType;
-    _with: LoginProfileType | IGroupsFound;
-}
-type StatesChat = {
-    setMessageItems: MessageType<IMessage['messages']>;
-    setHistoryMessageLog: MessageType<IMessage[]>;
-}
+import { ChattingBox, ImagesChat, StatesChat, UsersChat } from "./ChattingPage"
 
 export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType}) {
     // get page for display

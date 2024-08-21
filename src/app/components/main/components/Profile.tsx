@@ -99,9 +99,9 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
             </div>
             {/* num of group */}
             <div>
-                <p> Joined group: {profileData.group.length} </p>
+                <p> Joined group: {profileData?.group?.length || profileData?.group_count} </p>
                 {
-                    profileData.group.length > 0
+                    profileData?.group?.length > 0
                         ? <p> Group list: {profileData.group.join(' | ')} </p>
                         : null
                 }

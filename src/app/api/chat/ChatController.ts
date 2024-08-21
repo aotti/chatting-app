@@ -40,6 +40,7 @@ export class ChatController extends Controller {
                     user: payload.display_me,
                     text: JSON.parse(payload.message),
                     is_image: payload.is_image,
+                    is_sent: true,
                     time: payload.time,
                     date: payload.date,
                     created_at: payload.created_at
@@ -112,6 +113,7 @@ export class ChatController extends Controller {
                     user: payload.display_me,
                     text: JSON.parse(payload.message),
                     is_image: payload.is_image,
+                    is_sent: true,
                     time: payload.time,
                     date: payload.date,
                     created_at: payload.created_at

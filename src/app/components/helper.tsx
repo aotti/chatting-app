@@ -217,8 +217,9 @@ export async function getGroupNames(userData: LoginProfileType) {
     switch(getGroupResponse.status) {
         case 200:
             console.log(getGroupResponse);
-            
-            return getGroupResponse.data
+            // modify array object literal to array string
+            const groupNames = getGroupResponse.data.map(v => v.group_chat_id.name)
+            return groupNames
         default: 
             console.log({getGroupResponse})
     }

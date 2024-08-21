@@ -4,7 +4,7 @@ import { IGroupsFound } from "./UsersFoundContext";
 
 export type LoginProfileType = Pick<IProfilePayload, 'description'|'photo'> 
                             & Omit<IProfilePayload['user_id'], 'username'> 
-                            & {group?: string[]}
+                            & {group?: string[], group_count?: number}
 
 interface ILoginProfileStates {
     // user login state
