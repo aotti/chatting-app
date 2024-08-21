@@ -58,7 +58,7 @@ export async function verifyAccessToken(token: string, secret: string, onlyVerif
             is_login: verifyToken.payload.is_login,
             description: verifyToken.payload.description,
             photo: verifyToken.payload.photo,
-            group: verifyToken.payload.group
+            group: []
         }
         return verifiedUser
     } catch (error) {

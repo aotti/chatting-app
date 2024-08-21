@@ -8,6 +8,8 @@ export class GroupController extends Controller {
         let result: IResponse
 
         try {
+            console.log(payload);
+            
             // find_group(group_name text)
             // object to run query
             const queryObject: IQuerySelect = payload.user_me

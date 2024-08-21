@@ -91,6 +91,8 @@ export default class UserController extends Controller {
                         const getGroupNames = await groupController.getGroups(action, {user_me: selectResponse.data[0].id})
                         // if error, return
                         if(getGroupNames.status !== 200) return getGroupNames
+                        // modify array object literal to array string
+                        const groupNames = getGroupNames.data.map(v => v.group_chat_id.name)
                         // get unread direct message
                         const chatController = new ChatController()
                         const encryptedData = await encryptData({text: JSON.stringify(selectResponse.data[0])})
@@ -102,7 +104,7 @@ export default class UserController extends Controller {
                         // update last access & get profile
                         result = await this.lastAccess(action, selectResponse.data[0], req)
                         // combine user profile & unread messages
-                        result.data[0] = {...result.data[0], group: getGroupNames.data, ...getUnreadMessages.data[0]}
+                        result.data[0] = {...result.data[0], group: groupNames, ...getUnreadMessages.data[0]}
                     }
                 }
             }
