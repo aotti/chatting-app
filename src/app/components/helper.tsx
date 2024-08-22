@@ -169,10 +169,10 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
         headers: {
             'authorization': `Bearer ${token}`
         },
-        cache: 'no-cache'
+        cache: 'no-store'
     }
     // fetching
-    const unreadMessagesResponse: IResponse = await (await fetcher(`/user/autologin?data=${encryptedPayload}`, unreadMessagesFetchOptions)).json()
+    const unreadMessagesResponse: IResponse = await (await fetcher(`/user/autologin?data=${encryptedPayload}&ms=${Date.now()}`, unreadMessagesFetchOptions)).json()
     // response api
     switch(unreadMessagesResponse.status) {
         case 200:
@@ -211,10 +211,10 @@ export async function getGroupNames(userData: LoginProfileType) {
         headers: {
             'authorization': `Bearer ${token}`
         },
-        cache: 'no-cache'
+        cache: 'no-store'
     }
     // fetching
-    const getGroupResponse: IResponse = await (await fetcher(`/group?user_me=${userData.id}`, getGroupFetchOptions)).json()
+    const getGroupResponse: IResponse = await (await fetcher(`/group?user_me=${userData.id}&ms=${Date.now()}`, getGroupFetchOptions)).json()
     // response api
     switch(getGroupResponse.status) {
         case 200:
