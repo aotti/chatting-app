@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const action = await api_action(req.nextUrl.pathname, req.method)
     // get access token
     const token = req.headers.get('authorization')?.replace('Bearer ', '') || null
+    // let variable required because search user is can be done with/without login
     let verify: IResponse = null
     // token exist
     if(token) verify = await verifyUserTokens(token, action)

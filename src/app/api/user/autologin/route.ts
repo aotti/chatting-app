@@ -4,14 +4,11 @@ import { ChatController } from "../../chat/ChatController";
 
 const chatController = new ChatController()
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
     // create api action
     const action = 'unread dms'
-    // query param
-    const key = Array.from(req.nextUrl.searchParams.keys())[0]
-    const queryPayload = {
-        [key]: req.nextUrl.searchParams.get('data')
-    } as {data: string}
+    // get payload from client
+    const bodyPayload = await req.json()
     // get access token
     const token = req.headers.get('authorization').replace('Bearer ', '')
     const verify = await verifyUserTokens(token, action)
@@ -20,7 +17,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(verify, { status: verify.status })
     }
     // get unread messages
-    const result = await chatController.unreadMessages(action, queryPayload)
+    const result = await chatController.unreadMessages(action, bodyPayload)
     // no need to return new access token
     // return response
     return NextResponse.json(result, { status: result.status })

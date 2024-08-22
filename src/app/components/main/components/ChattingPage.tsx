@@ -265,7 +265,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     const { setMessageItems, setHistoryMessageLog } = sendChatStates
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})
-    const messageDate = new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'})
+    const messageDate = new Date().toLocaleDateString(['us'], {month: '2-digit', day: '2-digit', year: 'numeric'})
     // can be use for DM (direct msg) / GM (group msg)
     const currentDate = new Date().toISOString()
     const formData: IChatPayload & IImagePayload = {

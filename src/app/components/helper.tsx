@@ -165,14 +165,14 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
     }
     const encryptedPayload = await encryptData({text: JSON.stringify(unreadMessagesPayload), key: crypto.key, iv: crypto.iv})
     const unreadMessagesFetchOptions: RequestInit = { 
-        method: 'GET',
+        method: 'POST',
         headers: {
             'authorization': `Bearer ${token}`
         },
-        next: { revalidate: 1 }
+        body: JSON.stringify({ data: encryptedPayload })
     }
     // fetching
-    const unreadMessagesResponse: IResponse = await (await fetcher(`/user/autologin?data=${encryptedPayload}&ms=${Date.now()}`, unreadMessagesFetchOptions)).json()
+    const unreadMessagesResponse: IResponse = await (await fetcher(`/user/autologin`, unreadMessagesFetchOptions)).json()
     // response api
     switch(unreadMessagesResponse.status) {
         case 200:
@@ -206,15 +206,17 @@ export function modifyUnreadMessages(fetchResponse: IResponse) {
 export async function getGroupNames(userData: LoginProfileType) {
     // access token
     const token = window.localStorage.getItem('accessToken')
+    // ### UBAH METHOD KE POST
+    // ### UBAH METHOD KE POST
     const getGroupFetchOptions: RequestInit = { 
-        method: 'GET',
+        method: 'POST',
         headers: {
             'authorization': `Bearer ${token}`
         },
-        next: { revalidate: 1 }
+        body: JSON.stringify({ user_me: userData.id })
     }
     // fetching
-    const getGroupResponse: IResponse = await (await fetcher(`/group?user_me=${userData.id}&ms=${Date.now()}`, getGroupFetchOptions)).json()
+    const getGroupResponse: IResponse = await (await fetcher(`/group`, getGroupFetchOptions)).json()
     // response api
     switch(getGroupResponse.status) {
         case 200:
