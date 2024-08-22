@@ -26,6 +26,8 @@ export class ChatController extends Controller {
                     is_image: payload.is_image
                 }
             }
+            console.log(payload);
+            
             // insert data 
             const insertResponse = await this.dq.insert<any>(queryObject as IQueryInsert)
             // fail 
@@ -44,6 +46,8 @@ export class ChatController extends Controller {
                     date: payload.date,
                     created_at: payload.created_at
                 }
+                console.log(publishMessage);
+                
                 // pubnub 
                 const dmChannel = `DirectChat-${payload.user_with}`
                 await this.pubnubPublish(dmChannel, publishMessage)
@@ -97,6 +101,8 @@ export class ChatController extends Controller {
                     is_image: payload.is_image
                 }
             }
+            console.log(payload);
+            
             // insert data 
             const insertResponse = await this.dq.insert<any>(queryObject as IQueryInsert)
             // fail 
@@ -116,6 +122,8 @@ export class ChatController extends Controller {
                     date: payload.date,
                     created_at: payload.created_at
                 }
+                console.log(publishMessage);
+                
                 // pubnub 
                 const dmChannel = `GroupChat-${groupName}`
                 await this.pubnubPublish(dmChannel, publishMessage)
