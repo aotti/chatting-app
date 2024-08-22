@@ -23,8 +23,5 @@ export async function GET(req: NextRequest) {
     const result = await chatController.unreadMessages(action, queryPayload)
     // no need to return new access token
     // return response
-    NextResponse.next({headers: {
-        'cache-control': 'no-cache'
-    }})
     return NextResponse.json(result, { status: result.status })
 }

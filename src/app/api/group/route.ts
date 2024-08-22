@@ -24,8 +24,5 @@ export async function GET(req: NextRequest) {
     if(verify?.status === 201 && queryPayload.group_name)
         result.data[0] = {...result.data[0], ...verify.data[0]}
     // response from controller
-    NextResponse.next({headers: {
-        'cache-control': 'no-cache'
-    }})
     return NextResponse.json(result, { status: result.status })
 }

@@ -168,8 +168,7 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
         method: 'GET',
         headers: {
             'authorization': `Bearer ${token}`
-        },
-        next: { revalidate: 0 }
+        }
     }
     // fetching
     const unreadMessagesResponse: IResponse = await (await fetcher(`/user/autologin?data=${encryptedPayload}&ms=${Date.now()}`, unreadMessagesFetchOptions)).json()
@@ -210,8 +209,7 @@ export async function getGroupNames(userData: LoginProfileType) {
         method: 'GET',
         headers: {
             'authorization': `Bearer ${token}`
-        },
-        next: { revalidate: 0 }
+        }
     }
     // fetching
     const getGroupResponse: IResponse = await (await fetcher(`/group?user_me=${userData.id}&ms=${Date.now()}`, getGroupFetchOptions)).json()
