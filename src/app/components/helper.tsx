@@ -164,6 +164,9 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
         last_access: lastAccess
     }
     const encryptedPayload = await encryptData({text: JSON.stringify(unreadMessagesPayload), key: crypto.key, iv: crypto.iv})
+    // using POST method to force revalidate the data
+    // vercel dont revalidate it with GET method 
+    // even after modify the cache-control to no-store / s-maxage=1
     const unreadMessagesFetchOptions: RequestInit = { 
         method: 'POST',
         headers: {
@@ -206,8 +209,9 @@ export function modifyUnreadMessages(fetchResponse: IResponse) {
 export async function getGroupNames(userData: LoginProfileType) {
     // access token
     const token = window.localStorage.getItem('accessToken')
-    // ### UBAH METHOD KE POST
-    // ### UBAH METHOD KE POST
+    // using POST method to force revalidate the data
+    // vercel dont revalidate it with GET method 
+    // even after modify the cache-control to no-store / s-maxage=1
     const getGroupFetchOptions: RequestInit = { 
         method: 'POST',
         headers: {
