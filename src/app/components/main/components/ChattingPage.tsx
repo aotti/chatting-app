@@ -140,7 +140,7 @@ function Messages({ messageItems, firstMessage, imagePreviewStates }: {messageIt
                         'September', 'October', 'November', 'December']
     return (
         // message container
-        <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll">
+        <div id="messageContainer" className="w-full max-h-full p-3 overflow-y-scroll overflow-x-hidden">
             {// date items
             dateMessages.length === 0 
                 ? null
@@ -264,7 +264,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
     const { _me, _with } = userChatData
     const { setMessageItems, setHistoryMessageLog } = sendChatStates
     // message date
-    const [date, month, year] = [new Date().getDate(), new Date().getMonth(), new Date().getFullYear()]
+    const [date, month, year] = [new Date().getDate(), new Date().getMonth()+1, new Date().getFullYear()]
     const messageDate = `${month}/${date}/${year}`
     // message payload
     const messageTime = new Date().toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'})

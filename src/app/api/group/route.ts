@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     // create api action
-    const action = await api_action(req.nextUrl.pathname, req.method)
+    const action = 'group names'
     // get payload from client
     const bodyPayload = await req.json()
     // get access token
