@@ -72,6 +72,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                                 ...data, 
                                 {
                                     display_name: displayName, 
+                                    type: newMessage?.group_name ? 'group' : 'user',
                                     unread_messages: [...data[isUserExist].unread_messages, newMessage.text]
                                 }
                             ]
@@ -82,7 +83,13 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                         }
                         // no unread message from the user
                         else {
-                            const newData = [...data, {display_name: displayName, unread_messages: [newMessage.text]}]
+                            const newData = [
+                                ...data, 
+                                {
+                                    display_name: displayName, 
+                                    type: newMessage?.group_name ? 'group' : 'user',
+                                    unread_messages: [newMessage.text]}
+                                ]
                             return newData
                         }
                     }
@@ -90,6 +97,7 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                     else {
                         const newData = [{
                             display_name: displayName,
+                            type: newMessage?.group_name ? 'group' : 'user',
                             unread_messages: [newMessage.text]
                         }]
                         return newData
