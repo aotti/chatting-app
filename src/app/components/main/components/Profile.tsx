@@ -56,7 +56,7 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
             }
             <form onSubmit={(ev) => updateUserProfile(ev, isLogin[1], setIsLogin)}>
                 {/* display name */}
-                <div className="flex justify-between mb-2 font-semibold">
+                <div className="flex flex-wrap justify-between mb-2 font-semibold">
                     {
                         profileData.id === isLogin[1].id
                             // if open my profile, show edit button
