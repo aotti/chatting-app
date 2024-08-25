@@ -68,6 +68,8 @@ export default function ChattingGroup({ chatWith }: {chatWith: IGroupsFound}) {
                 // if new message is from other user OR group
                 // add the chat to unread messages
                 if(newMessage.group_name !== chatWith.name && !(chatWith as any)?.display_name) {
+                    // play message notif sound
+                    (qS('#message_notif') as HTMLAudioElement).play()
                     return setUnreadMessageItems(data => {
                         const displayName = newMessage.group_name || newMessage.user
                         // data > 0
@@ -103,6 +105,8 @@ export default function ChattingGroup({ chatWith }: {chatWith: IGroupsFound}) {
                         }
                     })
                 }
+                // play message notif sound
+                (qS('#message_notif') as HTMLAudioElement).play()
                 // messages data
                 const tempMessages: IMessage['messages'][0] = {
                     user: newMessage.user,

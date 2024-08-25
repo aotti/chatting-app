@@ -40,8 +40,8 @@ interface IQueryInsert extends IQueryBuilder {
 }
 
 interface IQueryUpdate extends IQueryBuilder {
-    whereColumn: string;
-    whereValue: string | number;
+    whereColumn?: string;
+    whereValue?: string | number;
     get updateColumn(): 
         // register
         IRegister |
@@ -137,15 +137,15 @@ interface IProfile {
         username: string;
         display_name: string;
     }
-    description?: string;
-    photo?: string;
 }
 
 /**
  * @param username used when search user
  */
 interface IProfilePayload extends IProfile {
-    username: string;
+    display_name: string;
+    description: string;
+    photo: string;
 }
 
 // message object

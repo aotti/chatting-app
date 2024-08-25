@@ -197,7 +197,7 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
                             msgItem.is_image 
                                 // width & height overwritten by !important style
                                 ? <CldImage src={msgItem.text} alt="image-chat" width={200} height={0} 
-                                    className="!w-auto !max-h-72 md:!max-w-2xl cursor-pointer" onClick={ev => { 
+                                    className="!w-auto !max-h-72 md:!max-w-md cursor-pointer" onClick={ev => { 
                                     setImageZoomPreview(ev.currentTarget.src)
                                     setImageDropPreview('flex') 
                                 }} />
@@ -216,7 +216,7 @@ function ImagePreview({ imagePreviewStates, userChatData = null, sendChatStates 
     const { imageDropPreview, setImageDropPreview, imageChatData, imageZoomPreview, setImageZoomPreview } = imagePreviewStates
     
     return (
-        <div id="imagePreviewContainer" className={`absolute z-20 ${imageDropPreview} bg-black/30 border-2 border-dashed h-[78%] w-[91%] md:w-[71%]`}>
+        <div id="imagePreviewContainer" className={`absolute z-20 ${imageDropPreview} bg-black/75 md:bg-black/35 border-2 border-dashed h-[78%] w-[91%] md:w-[71%]`}>
             <div className="mx-auto self-center">
                 {/* image preview */}
                 <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" 

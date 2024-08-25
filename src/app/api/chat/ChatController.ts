@@ -298,7 +298,7 @@ export class ChatController extends Controller {
                 resultGMS = selectResponseGMS.data
             }
             // record logged in users
-            await this.alterLoggedUsers({action: 'push', data: {id: parsePayload.user_id, display_name: parsePayload.display_name}})
+            await this.alterLoggedUsers({action: 'push', data: {id: parsePayload?.user_id || parsePayload['id'], display_name: parsePayload.display_name}})
             // ~~~ MERGE RESULTS ~~~
             // ~~~ MERGE RESULTS ~~~
             const mergedResult = [...resultDMS, ...resultGMS]

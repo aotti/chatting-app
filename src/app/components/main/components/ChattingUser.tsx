@@ -67,6 +67,8 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
                 // if new message is from other user OR group
                 // add the chat to unread messages
                 if(newMessage.user !== chatWith.display_name && !(chatWith as any)?.name) {
+                    // play message notif sound
+                    (qS('#message_notif') as HTMLAudioElement).play()
                     return setUnreadMessageItems(data => {
                         const displayName = newMessage.group_name || newMessage.user
                         // data > 0
@@ -102,6 +104,8 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
                         }
                     })
                 }
+                // play message notif sound
+                (qS('#message_notif') as HTMLAudioElement).play()
                 // messages data
                 const tempMessages: IMessage['messages'][0] = {
                     user: newMessage.user,

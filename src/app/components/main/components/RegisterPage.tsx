@@ -75,7 +75,7 @@ async function registerAccount(ev: FormEvent<HTMLFormElement>) {
         const formInputs = ([].slice.call(ev.currentTarget.elements) as any[]).filter(i => i.nodeName === 'INPUT')
         // get form input values
         const formData: IRegisterPayload = {
-            display_name: formInputs[0].value,
+            display_name: formInputs[0].value.trim().replace(/ +(?= )/g,''),
             username: formInputs[1].value,
             password: sha256(formInputs[2].value),
             confirm_password: sha256(formInputs[3].value)

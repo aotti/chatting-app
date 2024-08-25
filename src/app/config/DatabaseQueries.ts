@@ -88,11 +88,19 @@ export class DatabaseQueries {
         // update data
         const updateDataToDB = async () => {
             // run query
-            const {data, error} = await this.sb.from(this.prefix + queryObject.table)
-                                .update(queryObject.updateColumn)
-                                .eq(queryObject.whereColumn, queryObject.whereValue)
-                                .select(queryObject.selectColumn as string)
-            return {data: data as T[], error: error}
+            if(queryObject.function) {
+                // run function
+                const invokeFunction = await this.db_func<T>(queryObject)
+                return invokeFunction
+            }
+            else {
+                // run query
+                const {data, error} = await this.sb.from(this.prefix + queryObject.table)
+                                    .update(queryObject.updateColumn)
+                                    .eq(queryObject.whereColumn, queryObject.whereValue)
+                                    .select(queryObject.selectColumn as string)
+                return {data: data as T[], error: error}
+            }
         }
         return updateDataToDB()
     }

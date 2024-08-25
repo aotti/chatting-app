@@ -260,17 +260,13 @@ export default class UserController extends Controller {
                         // get logged in users
                         if(loggedInUsers.length > 0) {
                             const isVerified = await AuthController.verifyAccessToken({action: 'verify-only', token: loggedInUsers[i].token})
-                            if(isVerified) {
-                                newSelectResData.push({ ...data, is_login: 'Online' })
-                            }
-                            else {
-                                newSelectResData.push({ ...data, is_login: 'Away' })
-                            }
+                            // online
+                            if(isVerified) newSelectResData.push({ ...data, is_login: 'Online' })
+                            // away
+                            else newSelectResData.push({ ...data, is_login: 'Away' })
                         }
                         // offline users
-                        else {
-                            newSelectResData.push({ ...data, is_login: 'Offline' })
-                        }
+                        else newSelectResData.push({ ...data, is_login: 'Offline' })
                     }
                 }
                 // response
@@ -287,19 +283,20 @@ export default class UserController extends Controller {
         }
     }
 
-    async updateProfile(action: string, payload: IProfilePayload) {
+    async updateProfile(action: string, payload: IProfilePayload, req: NextRequest) {
         let result: IResponse
         // filter payload
-        const filteredPayload = await filter(action, payload as IProfilePayload)
+        const filteredPayload = await filter(action, payload)
         if(filteredPayload.status === 400) {
             return filteredPayload
         }
 
         try {
             // object to run query
-            const queryObject: IQueryUpdate = {
+            const queryObject: Partial<IQueryUpdate> = payload?.photo 
+            ? {
                 table: 'profiles',
-                selectColumn: this.dq.columnSelector('profiles', 24),
+                selectColumn: this.dq.columnSelector('profiles', 234),
                 whereColumn: 'user_id',
                 whereValue: payload.user_id.id,
                 get updateColumn() {
@@ -308,16 +305,45 @@ export default class UserController extends Controller {
                         updated_at: new Date().toISOString()
                     }
                 }
+            } : {
+                table: 'profiles',
+                function: 'update_user_profile',
+                function_args: {
+                    user_me: payload.user_id.id,
+                    name: payload.display_name,
+                    descript: payload.description
+                }
             }
             // update data
-            const updateResponse = await this.dq.update<IProfilePayload>(queryObject)
+            const updateResponse = await this.dq.update<IProfilePayload>(queryObject as IQueryUpdate)
             // fail 
             if(updateResponse.data === null) {
                 result = await respond(500, updateResponse.error, [])
             }
             // success
             else if(updateResponse.error === null) {
+                // jwt payload
+                const jwtPayload = {
+                    id: payload.user_id.id,
+                    display_name: updateResponse.data[0]?.user_id?.display_name || updateResponse.data[0].display_name,
+                    is_login: 'Online',
+                    description: updateResponse.data[0].description,
+                    photo: updateResponse.data[0].photo
+                }
+                // create access token 
+                const accessToken = await this.auth.generateAccessToken(jwtPayload)
+                // create refresh token
+                const refreshToken = await this.auth.generateRefreshToken(jwtPayload)
+                // save refresh token
+                cookies().set('refreshToken', refreshToken, { 
+                    path: '/',
+                    domain: req.nextUrl.hostname,
+                    maxAge: 7776000, // 3 months
+                    httpOnly: true 
+                })
                 result = await respond(200, `${action} success`, updateResponse.data)
+                // add access token to response
+                result.data[0] = {...result.data[0], token: accessToken}
             }
             // return response
             return result

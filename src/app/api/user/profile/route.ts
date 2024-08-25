@@ -1,19 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { api_action, verifyUserTokens } from "../../helper";
-import { v2 as cloudinary } from "cloudinary";
-import UserController from "../UserController";
+import { NextRequest, NextResponse } from "next/server"
+import { api_action, verifyUserTokens } from "../../helper"
+import UserController from "../UserController"
 
 const userController = new UserController()
-
-export async function POST(req: NextRequest) {
-    // create api action
-    const action = await api_action(req.nextUrl.pathname, req.method)
-    console.log(action);
-    
-    const { paramsToSign } = await req.json()
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET)
-    return NextResponse.json({ signature })
-}
 
 export async function PATCH(req: NextRequest) {
     // create api action

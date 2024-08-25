@@ -9,6 +9,7 @@ import { searchGroupname, searchUsername } from "./SearchBox";
 import { historyChat } from "./SearchList";
 import { UsersFoundContext } from "../../../context/UsersFoundContext";
 import LoadingPage from "../../loading";
+import { qS } from "../../helper";
 
 export default function HomePage({ crypto }) {
     // get page for display & loading
@@ -59,7 +60,9 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
             message: (data) => {
                 const newMessage: IMessage['messages'][0] = data.message
                 // only get other message
-                if(newMessage.user === isLogin[1].display_name) return
+                if(newMessage.user === isLogin[1].display_name) return;
+                // play message notif sound
+                (qS('#message_notif') as HTMLAudioElement).play()
                 // add the chat to unread messages
                 setUnreadMessageItems(data => {
                     const displayName = newMessage.group_name || newMessage.user

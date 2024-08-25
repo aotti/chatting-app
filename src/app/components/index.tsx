@@ -298,6 +298,7 @@ export default function Index({ accessSecret, pubnubKeys, crypto }: IndexProps) 
                                     {/* main */}
                                     <main className="h-screen dark:text-white">
                                         <MainContent crypto={crypto} />
+                                        <audio id="message_notif" src="./sound/message_notif.mp3"></audio>
                                     </main>
                                     {/* footer */}
                                     <footer className="mt-2 md:mt-4 p-3 bg-blue-400 dark:bg-orange-600 dark:text-white">
