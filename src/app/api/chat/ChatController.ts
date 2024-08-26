@@ -256,7 +256,7 @@ export class ChatController extends Controller {
                 table: 'direct_chats & messages & users',
                 function: 'get_unread_dms', // dms = direct messages
                 function_args: {
-                    user_me: parsePayload?.user_id || parsePayload['id'], // uuid
+                    user_me: parsePayload.id, // uuid
                     last_online: parsePayload.last_access // timestampz
                 }
             }
@@ -298,7 +298,7 @@ export class ChatController extends Controller {
                 resultGMS = selectResponseGMS.data
             }
             // record logged in users
-            await this.alterLoggedUsers({action: 'push', data: {id: parsePayload?.user_id || parsePayload['id'], display_name: parsePayload.display_name}})
+            await this.alterLoggedUsers({action: 'push', data: {id: parsePayload.id, display_name: parsePayload.display_name}})
             // ~~~ MERGE RESULTS ~~~
             // ~~~ MERGE RESULTS ~~~
             const mergedResult = [...resultDMS, ...resultGMS]

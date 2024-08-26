@@ -14,14 +14,27 @@ export default async function filter(action: string, payload: PayloadTypes) {
     // check payload
     switch(true) {
         // filtering
+        // user routes
         case action.includes('get user'): [filterStatus, filterMessage] = getUser(payload); break
         case action.includes('register'): [filterStatus, filterMessage] = register(payload); break
         case action.includes('login'): [filterStatus, filterMessage] = login(payload); break
         case action.includes('logout'): [filterStatus, filterMessage] = logout(payload); break
-        case action.includes('insert chat direct'): [filterStatus, filterMessage] = directChat(payload); break
+        case action.includes('user photo'): [filterStatus, filterMessage] = updateUserPhoto(payload); break
+        case action.includes('user profile'): [filterStatus, filterMessage] = updateUserProfile(payload); break
+        // chat routes
+        case action.includes('insert chat direct'): 
+        case action.includes('insert chat group'):
+        case action.includes('chat image'):
+            [filterStatus, filterMessage] = sendChat(payload); break
         case action.includes('get chat direct'): [filterStatus, filterMessage] = historyDMS(payload); break
+        case action.includes('get chat group'): [filterStatus, filterMessage] = historyGMS(payload); break
+        // unread direct & group
         case action.includes('unread dms'): [filterStatus, filterMessage] = unreadDMS(payload); break
-        case action.includes('chat image'): [filterStatus, filterMessage] = sendImage(payload); break
+        // group routes
+        case action.includes('get group'): [filterStatus, filterMessage] = getGroup(payload); break
+        case action.includes('group names'): [filterStatus, filterMessage] = getGroupNames(payload); break
+        case action.includes('group create'): [filterStatus, filterMessage] = createGroup(payload); break
+        case action.includes('group join'): [filterStatus, filterMessage] = joinGroup(payload); break
     }
     // found error
     if(!filterStatus) filterResult = await respond(400, filterMessage, [])
@@ -135,10 +148,36 @@ function logout(payload: PayloadTypes) {
     return resultValue
 }
 
-function directChat(payload: PayloadTypes) {
+function updateUserPhoto(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /user_me|user_with|message/g
+    const regexKeys = /user_id|photo/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 2)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'user_id':
+                resultValue = valueCheck(key, value, 'object'); break
+            case 'photo':
+                resultValue = valueCheck(key, value, 'string', 60); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function updateUserProfile(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /user_id|display_name|description/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 3)
     if(!resultKey[0]) return resultKey
@@ -149,12 +188,56 @@ function directChat(payload: PayloadTypes) {
         const value = payload[key]
         // filter payload value
         switch(key) {
+            case 'user_id':
+                resultValue = valueCheck(key, value, 'object'); break
+            case 'display_name':
+                const displayNameRegex = /[^a-z\s]/gi
+                resultValue = valueCheck(key, value, 'string', 5, displayNameRegex); break
+            case 'description':
+                resultValue = valueCheck(key, value, 'string', 1); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function sendChat(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /user_me|display_me|user_with|message|is_group_chat|is_image|is_uploaded|image_size|time|date|created_at/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 11)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
             case 'user_me':
                 resultValue = valueCheck(key, value, 'string', 5); break
+            case 'display_me':
+                const displayNameRegex = /[^a-z\s]/gi
+                resultValue = valueCheck(key, value, 'string', 5, displayNameRegex); break
             case 'user_with':
                 resultValue = valueCheck(key, value, 'string', 5); break
             case 'message':
                 resultValue = valueCheck(key, value, 'string', 1); break
+            case 'is_image':
+                resultValue = valueCheck(key, value, 'boolean'); break
+            case 'is_uploaded':
+                resultValue = valueCheck(key, value, 'boolean'); break
+            case 'image_size':
+                resultValue = valueCheck(key, value, 'number'); break
+            case 'time':
+                resultValue = valueCheck(key, value, 'string'); break
+            case 'date':
+                resultValue = valueCheck(key, value, 'boolean'); break
+            case 'created_at':
+                resultValue = valueCheck(key, value, 'number'); break
         }
         // error found
         if(!resultValue[0]) return resultValue
@@ -191,10 +274,10 @@ function historyDMS(payload: PayloadTypes) {
     return resultValue
 }
 
-function unreadDMS(payload: PayloadTypes) {
+function historyGMS(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /id|last_access/g
+    const regexKeys = /user_with|amount/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 2)
     if(!resultKey[0]) return resultKey
@@ -205,10 +288,10 @@ function unreadDMS(payload: PayloadTypes) {
         const value = payload[key]
         // filter payload value
         switch(key) {
-            case 'id':
-                resultValue = uuidCheck(key, value); break
-            case 'last_access':
-                resultValue = valueCheck(key, value, 'string', 20); break
+            case 'user_with':
+                resultValue = valueCheck(key, value, 'string'); break
+            case 'amount':
+                resultValue = valueCheck(key, value, 'number'); break
         }
         // error found
         if(!resultValue[0]) return resultValue
@@ -217,10 +300,10 @@ function unreadDMS(payload: PayloadTypes) {
     return resultValue
 }
 
-function sendImage(payload: PayloadTypes) {
+function unreadDMS(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /message|image_size|is_uploaded/g
+    const regexKeys = /id|display_name|last_access/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 3)
     if(!resultKey[0]) return resultKey
@@ -231,12 +314,115 @@ function sendImage(payload: PayloadTypes) {
         const value = payload[key]
         // filter payload value
         switch(key) {
-            case 'message':
-                resultValue = valueCheck(key, value, 'string', 1); break
-            case 'image_size':
-                resultValue = valueCheck(key, value, 'number'); break
-            case 'is_uploaded':
-                resultValue = valueCheck(key, value, 'boolean'); break
+            case 'id':
+                resultValue = uuidCheck(key, value); break
+            case 'display_name':
+                const displayNameRegex = /[^a-z\s]/gi
+                resultValue = valueCheck(key, value, 'string', 3, displayNameRegex); break
+            case 'last_access':
+                resultValue = valueCheck(key, value, 'string', 20); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function getGroup(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /user_me/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 1)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'user_me':
+                resultValue = uuidCheck(key, value); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function getGroupNames(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /group_name/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 1)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'group_name':
+                resultValue = valueCheck(key, value, 'string', 3); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function createGroup(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /group_name|group_code|user_me/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 3)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'group_name':
+                resultValue = valueCheck(key, value, 'string', 5); break
+            case 'group_code':
+                resultValue = valueCheck(key, value, 'string', 8); break
+            case 'user_me':
+                resultValue = uuidCheck(key, value); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function joinGroup(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /group_code|user_me/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 2)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'group_code':
+                resultValue = valueCheck(key, value, 'string', 8); break
+            case 'user_me':
+                resultValue = uuidCheck(key, value); break
         }
         // error found
         if(!resultValue[0]) return resultValue
@@ -262,6 +448,7 @@ function keyCheck(payloadKeys: string, regex: RegExp, length: number): [boolean,
     return [true, '']
 }
 
+type ValueCheckTypes = 'string' | 'number' | 'boolean' | 'object'
 /**
  * check payload values type and length
  * @param key payload key
@@ -270,7 +457,7 @@ function keyCheck(payloadKeys: string, regex: RegExp, length: number): [boolean,
  * @param length required value length
  * @returns true if no error
  */
-function valueCheck(key: string, value: string | number | boolean, type: string, length?: number, regex?: RegExp): [boolean, string] {
+function valueCheck(key: string, value: string | number | boolean, type: ValueCheckTypes, length?: number, regex?: RegExp): [boolean, string] {
     // check type
     if(typeof value !== type)
         return [false, `"${key}" type does not match!`]

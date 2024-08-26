@@ -189,7 +189,7 @@ interface IHistoryMessagePayload extends IChat {
 }
 
 interface IUnreadMessagePayload {
-    user_id: string;
+    id: string;
     display_name: string;
     group_names: string;
     last_access: string;

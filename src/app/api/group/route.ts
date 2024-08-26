@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { api_action, verifyUserTokens } from "../helper"
-import { IGroupPayload, IResponse } from "../../types"
+import { IGroupPayload } from "../../types"
 import { GroupController } from "./GroupController"
 
 const groupController = new GroupController()

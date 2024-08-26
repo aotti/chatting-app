@@ -6,6 +6,11 @@ import { respond } from "../helper";
 export class GroupController extends Controller {
     async getGroups(action: string, payload: Pick<IGroupPayload, 'group_name'|'user_me'>) {
         let result: IResponse
+        // filter payload
+        const filteredPayload = await filter(action, payload as IGroupPayload)
+        if(filteredPayload.status === 400) {
+            return filteredPayload
+        }
 
         try {
             // find_group(group_name text)

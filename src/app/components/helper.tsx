@@ -158,7 +158,7 @@ export async function getUnreadMessages(crypto: Record<'key'|'iv', string>, user
     const lastAccess = window.localStorage.getItem('lastAccess')
     // fetch stuff
     const unreadMessagesPayload: IUnreadMessagePayload = {
-        user_id: user.id,
+        id: user.id,
         display_name: user.display_name,
         group_names: user.group.join(','),
         last_access: lastAccess
