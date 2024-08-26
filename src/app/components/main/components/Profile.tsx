@@ -86,7 +86,7 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
                                     ? <button type="button" className="bg-sky-600 h-fit p-2 rounded-lg"> Upload </button>
                                     : <CldUploadButton className="bg-sky-600 h-fit p-2 rounded-lg" signatureEndpoint="/api/user/photo" 
                                         options={{
-                                            sources: ['local'], publicId: `image_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
+                                            sources: ['local'], publicId: `profile_${randomBytes(16).toString('hex')}`, folder: 'chatting-app-profile',
                                             maxFiles: 1, clientAllowedFormats: ['jpg', 'png'], maxFileSize: 2048_000, 
                                             multiple: false, cropping: true, croppingCoordinatesMode: 'custom', croppingValidateDimensions: true,
                                             croppingAspectRatio: 1, croppingShowDimensions: true
