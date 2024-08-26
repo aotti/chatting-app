@@ -8,6 +8,7 @@ export interface IGroupsFound {
     invite_code: string;
     member_ids: string;
     member_names: string;
+    member_roles: string;
     member_count: number;
     created_at: string;
 }

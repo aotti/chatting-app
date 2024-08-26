@@ -58,7 +58,7 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
                 {/* display name */}
                 <div className="flex flex-wrap justify-between mb-2 font-semibold">
                     {
-                        profileData.id === isLogin[1].id
+                        isLogin[0] && profileData.id === isLogin[1].id
                             // if open my profile, show edit button
                             ? <EditUserProfile profileClassName={profileClassName} profileData={profileData} editProfile={editProfile} setEditProfile={setEditProfile} />
                             // else, hide all buttons
@@ -74,7 +74,7 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
                         isLogin[0] && profileData.id === isLogin[1].id 
                             ? <div className="self-center">
                                 <div className="mb-2">
-                                    <p id="uploadPhotoResponse" className="font-semibold text-green-300 whitespace-pre"></p>
+                                    <p id="uploadPhotoResponse" className="text-green-700 dark:text-green-300 font-semibold whitespace-pre"></p>
                                     <span> max. 2mb <br /> jpg, png </span>
                                     <span className="text-xs border rounded-full p-0.5" tabIndex={0}
                                         title="if the image doesnt display, try re-login"> 
@@ -127,9 +127,9 @@ function UserProfile({ profileClassName, profileData }: IProfile<LoginProfileTyp
                 {/* error message */}
                 <div className="font-semibold">
                     {/* error */}
-                    <p id="error_message" className="text-red-300"></p>
+                    <p id="error_message" className="text-red-600 dark:text-red-300"></p>
                     {/* success */}
-                    <p id="success_message" className="text-green-300"></p>
+                    <p id="success_message" className="text-green-700 dark:text-green-300"></p>
                 </div>
             </form>
         </div>
@@ -141,6 +141,9 @@ function GroupProfile({ profileClassName, profileData }: IProfile<IGroupsFound>)
     const { isLogin, setShowMyProfile, showOtherProfile, setShowOtherProfile } = useContext(LoginProfileContext)
     // profile ref 
     const profileRef = useRef(null)
+    // group creator
+    const adminRolePos = profileData.member_roles.split(', ').indexOf('admin')
+    const groupCreator = profileData.member_names.split(', ')[adminRolePos]
     // group photo
     const groupSrc = 'https://res.cloudinary.com/dk5hjh5w5/image/upload/v1723531320/meeting_wxp4ys.png'
     // click outside profile
@@ -168,7 +171,7 @@ function GroupProfile({ profileClassName, profileData }: IProfile<IGroupsFound>)
             <div className="font-semibold">
                 {/* show invite code for admin & member */}
                 <p> 
-                    Creator: {profileData.member_names.split(', ')[0]} 
+                    Creator: {groupCreator} 
                     {isLogin[1].group.indexOf(profileData.name) !== -1 ? ` - ${profileData.invite_code}` : ''} 
                 </p>
                 <p> Since: {new Date(profileData.created_at).toLocaleDateString(['id'], {day: '2-digit', month: '2-digit', year: 'numeric'})} </p>
