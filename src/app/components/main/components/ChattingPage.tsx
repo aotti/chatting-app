@@ -326,13 +326,13 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
                             : '/chat/direct'
     // fetching
     const messageFetch: IResponse = await (await fetcher(apiEndpoint, messageFetchOptions)).json()
+    // change message status
+    const getMessageStatus = qSA('[data-created]')
     console.log(messageFetch);
     
     // response
     switch(messageFetch.status) {
         case 200: 
-            // change message status
-            const getMessageStatus = qSA('[data-created]')
             getMessageStatus.forEach((v: HTMLSpanElement) => {
                 if(v.dataset.created == currentDate)
                     v.textContent = '✔'
@@ -346,6 +346,10 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
             }
             break
         default: 
+            getMessageStatus.forEach((v: HTMLSpanElement) => {
+                if(v.dataset.created == currentDate)
+                    v.textContent = '⚠'
+            })
             break
     }
 }

@@ -230,7 +230,7 @@ async function joinGroup(ev: FormEvent<HTMLFormElement>, userMe: LoginProfileTyp
         // response
         switch(joinResponse.status) {
             case 200:
-                searchMessage.textContent = `success joining group!`
+                searchMessage.textContent = `success joining "${joinResponse.data[0].name}" group!`
                 setTimeout(() => { searchMessage.textContent = `` }, 3000);
                 // update access token if exist
                 if(joinResponse.data[0]?.token) {

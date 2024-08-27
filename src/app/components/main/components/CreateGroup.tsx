@@ -28,7 +28,7 @@ export default function CreateGroup() {
                     {/* success */}
                     <p id="success_message" className="text-green-300"></p>
                     {/* error */}
-                    <p id="error_message" className="text-red-300"></p>
+                    <p id="error_message" className="text-red-300 whitespace-pre"></p>
                 </div>
                 {/* submit button */}
                 <div className="grid grid-cols-2">
@@ -84,8 +84,7 @@ async function createGroup(ev: FormEvent<HTMLFormElement>, userMe: LoginProfileT
         switch(createGroupResponse.status) {
             case 200: 
                 errorMessage.textContent = ``
-                successMessage.textContent = `success create group!
-                                            invite code: ${createGroupResponse.data[0].invite_code}`
+                successMessage.textContent = `success create group! \r\ninvite code: ${createGroupResponse.data[0].invite_code}`
                 // update access token if exist
                 if(createGroupResponse.data[0]?.token) {
                     window.localStorage.setItem('accessToken', createGroupResponse.data[0].token)

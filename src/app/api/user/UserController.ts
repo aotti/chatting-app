@@ -61,7 +61,7 @@ export default class UserController extends Controller {
             // object to run query
             const queryObject: IQuerySelect = {
                 table: 'users',
-                selectColumn: this.dq.columnSelector('users', 124),
+                selectColumn: this.dq.columnSelector('users', 1245),
                 whereColumn: 'username',
                 whereValue: payload.username
             }
@@ -88,7 +88,7 @@ export default class UserController extends Controller {
                     else {
                         // get group names
                         const groupController = new GroupController()
-                        const getGroupNames = await groupController.getGroups(action, {user_me: selectResponse.data[0].id})
+                        const getGroupNames = await groupController.getGroups('group names', {user_me: selectResponse.data[0].id})
                         // if error, return
                         if(getGroupNames.status !== 200) return getGroupNames
                         // modify array object literal to array string
@@ -384,7 +384,7 @@ export default class UserController extends Controller {
                 // publish logged users data to client
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token
-                cookies().delete('refreshToken')
+                cookies().set('refreshToken', '')
                 // response
                 result = await respond(204, action, [])
             }

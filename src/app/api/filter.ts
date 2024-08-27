@@ -235,9 +235,9 @@ function sendChat(payload: PayloadTypes) {
             case 'time':
                 resultValue = valueCheck(key, value, 'string'); break
             case 'date':
-                resultValue = valueCheck(key, value, 'boolean'); break
+                resultValue = valueCheck(key, value, 'string'); break
             case 'created_at':
-                resultValue = valueCheck(key, value, 'number'); break
+                resultValue = valueCheck(key, value, 'string'); break
         }
         // error found
         if(!resultValue[0]) return resultValue
