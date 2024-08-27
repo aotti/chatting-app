@@ -356,7 +356,7 @@ export default class UserController extends Controller {
         }
     }
 
-    async logout(action: string, payload: Pick<ILoginPayload, 'id'>) {
+    async logout(action: string, payload: Pick<ILoginPayload, 'id'>, req: NextRequest) {
         let result: IResponse
         // filter payload
         const filteredPayload = await filter(action, payload as ILoginPayload)
@@ -384,7 +384,11 @@ export default class UserController extends Controller {
                 // publish logged users data to client
                 await this.pubnubPublish('logged-users', filterLoggedUsers)
                 // delete refresh token
-                cookies().set('refreshToken', '')
+                cookies().set('refreshToken', '', { 
+                    path: '/',
+                    domain: req.nextUrl.hostname,
+                    httpOnly: true 
+                })
                 // response
                 result = await respond(204, action, [])
             }

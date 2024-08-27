@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     // get payload from client
     const bodyPayload: Pick<ILoginPayload, 'id'> = await req.json()
     // logout
-    const result = await userController.logout(action, bodyPayload)
+    const result = await userController.logout(action, bodyPayload, req)
     // return response
     return new Response(null, { status: result.status })
 }
