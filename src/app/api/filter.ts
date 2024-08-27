@@ -332,30 +332,6 @@ function unreadDMS(payload: PayloadTypes) {
 function getGroup(payload: PayloadTypes) {
     // payload key
     const payloadKeys = Object.keys(payload).join(',')
-    const regexKeys = /user_me/g
-    // filter payload key
-    const resultKey = keyCheck(payloadKeys, regexKeys, 1)
-    if(!resultKey[0]) return resultKey
-    // payload value
-    let resultValue: [boolean, string] = [true, '']
-    // loop payload
-    for(let key of Object.keys(payload)) {
-        const value = payload[key]
-        // filter payload value
-        switch(key) {
-            case 'user_me':
-                resultValue = uuidCheck(key, value); break
-        }
-        // error found
-        if(!resultValue[0]) return resultValue
-    }
-    // no error
-    return resultValue
-}
-
-function getGroupNames(payload: PayloadTypes) {
-    // payload key
-    const payloadKeys = Object.keys(payload).join(',')
     const regexKeys = /group_name/g
     // filter payload key
     const resultKey = keyCheck(payloadKeys, regexKeys, 1)
@@ -369,6 +345,30 @@ function getGroupNames(payload: PayloadTypes) {
         switch(key) {
             case 'group_name':
                 resultValue = valueCheck(key, value, 'string', 3); break
+        }
+        // error found
+        if(!resultValue[0]) return resultValue
+    }
+    // no error
+    return resultValue
+}
+
+function getGroupNames(payload: PayloadTypes) {
+    // payload key
+    const payloadKeys = Object.keys(payload).join(',')
+    const regexKeys = /user_me/g
+    // filter payload key
+    const resultKey = keyCheck(payloadKeys, regexKeys, 1)
+    if(!resultKey[0]) return resultKey
+    // payload value
+    let resultValue: [boolean, string] = [true, '']
+    // loop payload
+    for(let key of Object.keys(payload)) {
+        const value = payload[key]
+        // filter payload value
+        switch(key) {
+            case 'user_me':
+                resultValue = uuidCheck(key, value); break
         }
         // error found
         if(!resultValue[0]) return resultValue
