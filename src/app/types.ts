@@ -163,6 +163,7 @@ interface IChat {
 
 interface IMessage extends IChat {
     messages: {
+        id?: string | number;
         user: string;
         group_name?: string;
         style: string;

@@ -220,13 +220,15 @@ export async function historyChat(userMe: LoginProfileType, userWith: LoginProfi
                                         ? groupMemberNames[getGroupDisplayName]
                                         : (userWith as LoginProfileType).display_name
                 // create message object
+                const [date, month, year] = [new Date(hrd.created_at).getDate(), new Date(hrd.created_at).getMonth()+1, new Date(hrd.created_at).getFullYear()]
+                const messageDate = `${month}/${date}/${year}`
                 const tempMessages: IMessage['messages'][0] = {
                     user: displayName,
                     style: userMe.id === hrd.user_id ? 'justify-end' : 'justify-start',
                     text: hrd.message,
                     is_image: hrd.is_image,
                     time: new Date(hrd.created_at).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute: '2-digit'}),
-                    date: new Date(hrd.created_at).toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'}),
+                    date: messageDate,
                     created_at: hrd.created_at
                     // ### updated_at later for edit message
                 }

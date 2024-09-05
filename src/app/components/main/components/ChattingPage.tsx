@@ -168,14 +168,14 @@ function Messages({ messageItems, firstMessage, imagePreviewStates }: {messageIt
     )
 }
 
-const currentTime = new Date().toISOString()
 function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messages'][0]; imagePreviewStates: any}) {
+    const currentTime = new Date().toISOString()
     const { setImageDropPreview, setImageZoomPreview } = imagePreviewStates
 
     return (
         <>
             <div className={`flex ${msgItem.style}`}>
-                <div className="border rounded-md min-w-32 p-1 my-2 bg-orange-400 dark:bg-sky-700">
+                <div className="border rounded-md min-w-32 max-w-72 md:max-w-96 p-1 my-2 bg-orange-400 dark:bg-sky-700">
                     {/* author & status*/}
                     <p className="text-xs flex justify-between gap-2"> 
                         <span className="mb-1"> {msgItem.user} </span>
@@ -201,7 +201,9 @@ function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messag
                                     setImageZoomPreview(ev.currentTarget.src)
                                     setImageDropPreview('flex') 
                                 }} />
-                                : msgItem.text
+                                : msgItem.text.includes('https://')
+                                    ? <a href={msgItem.text} target="_blank" className="underline"> {msgItem.text} </a>
+                                    : msgItem.text
                         }
                     </p>
                     {/* time */}
@@ -220,7 +222,7 @@ function ImagePreview({ imagePreviewStates, userChatData = null, sendChatStates 
             <div className="mx-auto self-center">
                 {/* image preview */}
                 <img id="imageDropPreview" src={imageZoomPreview} alt="img preview" 
-                    className={`border mx-auto ${imageZoomPreview ? 'w-auto h-auto md:max-w-3xl md:max-h-96' : 'w-1/2 h-1/3'}`}/>
+                    className={`border mx-auto ${imageZoomPreview ? 'w-auto max-h-[32rem] md:max-w-3xl md:max-h-96' : 'w-1/2 h-1/3'}`}/>
                 {/* error message */}
                 <div className="flex justify-center my-3">
                     <p id="imageErrorMessage" className="text-red-600 font-semibold bg-red-200/50 w-fit px-2"> </p>
@@ -274,7 +276,7 @@ async function sendChat(ev: FormEvent<HTMLFormElement> | null, userChatData: Use
         // author is user_id
         user_me: _me.id, // user id
         display_me: _me.display_name,
-        // group = group id + invite link | dm = user id
+        // group = group id + group name | dm = user id
         user_with: typeof _with.id == 'number' 
                 ? `${_with.id}_${(_with as IGroupsFound).name}` 
                 : (_with as LoginProfileType).id, 

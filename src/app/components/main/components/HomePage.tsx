@@ -7,9 +7,9 @@ import { ListenerParameters } from "pubnub";
 import { IMessage } from "../../../types";
 import { searchGroupname, searchUsername } from "./SearchBox";
 import { historyChat } from "./SearchList";
-import { UsersFoundContext } from "../../../context/UsersFoundContext";
+import { IGroupsFound, UsersFoundContext } from "../../../context/UsersFoundContext";
 import LoadingPage from "../../loading";
-import { qS } from "../../helper";
+import { addMessageItem, qS } from "../../helper";
 
 export default function HomePage({ crypto }) {
     // get page for display & loading
@@ -106,6 +106,15 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                         return newData
                     }
                 })
+                // only add if the user/group is exist
+                const isUserGroupExist = historyMessageLog.length === 0 
+                                        ? null
+                                        : historyMessageLog.map(v => v.user_with).indexOf(newMessage.id as string)
+                // add message to history log
+                if(isUserGroupExist !== null && isUserGroupExist !== -1) {
+                    const _with = {id: newMessage.id} as LoginProfileType | IGroupsFound
+                    setHistoryMessageLog(data => addMessageItem(data, isLogin[1], _with, newMessage))
+                }
             }
         }
         pubsub.addListener(publishedMessage)

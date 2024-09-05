@@ -37,6 +37,7 @@ export class ChatController extends Controller {
                 // pubnub
                 const publishMessage: IMessage['messages'][0] = {
                     style: 'justify-start',
+                    id: payload.user_me,
                     user: payload.display_me,
                     text: JSON.parse(payload.message),
                     is_image: payload.is_image,
@@ -109,6 +110,7 @@ export class ChatController extends Controller {
                 const publishMessage: IMessage['messages'][0] = {
                     style: 'justify-start',
                     group_name: groupName,
+                    id: groupId,
                     user: payload.display_me,
                     text: JSON.parse(payload.message),
                     is_image: payload.is_image,
