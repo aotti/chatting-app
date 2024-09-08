@@ -45,9 +45,13 @@ export class ChatController extends Controller {
                     date: payload.date,
                     created_at: payload.created_at
                 }
-                // pubnub 
-                const dmChannel = `DirectChat-${payload.user_with}`
-                await this.pubnubPublish(dmChannel, publishMessage)
+                // pubnub publish, to self & target 
+                // target
+                const targetChannel = `DirectChat-${payload.user_with}`
+                await this.pubnubPublish(targetChannel, publishMessage)
+                // self
+                const selfChannel = `DirectChat-${payload.user_me}`
+                await this.pubnubPublish(selfChannel, publishMessage)
                 // RENEW TOKEN FOR ONLINE STATUS
                 if(tempToken) {
                     // get user data from access token

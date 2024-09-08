@@ -9,7 +9,7 @@ export class Controller {
     protected dq = new DatabaseQueries()
     protected auth = new AuthController()
     // log users online
-    private static loggedUsers: ILoggedUsers[] = []
+    static loggedUsers: ILoggedUsers[] = []
 
     // pubnub for publish
     protected pubpub: Pubnub

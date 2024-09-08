@@ -168,8 +168,8 @@ function Messages({ messageItems, firstMessage, imagePreviewStates }: {messageIt
     )
 }
 
+const currentTime = new Date().toISOString()
 function MessageItem({ msgItem, imagePreviewStates }: {msgItem: IMessage['messages'][0]; imagePreviewStates: any}) {
-    const currentTime = new Date().toISOString()
     const { setImageDropPreview, setImageZoomPreview } = imagePreviewStates
 
     return (

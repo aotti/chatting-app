@@ -106,7 +106,8 @@ function LoginTrue({ loginData, crypto }: {loginData: LoginProfileType; crypto: 
                         return newData
                     }
                 })
-                // only add if the user/group is exist
+                // add if the user/group is exist 
+                // (assuming the user already have the history chat)
                 const isUserGroupExist = historyMessageLog.length === 0 
                                         ? null
                                         : historyMessageLog.map(v => v.user_with).indexOf(newMessage.id as string)

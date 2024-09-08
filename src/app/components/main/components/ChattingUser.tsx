@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react"
 import { MiscContext } from "../../../context/MiscContext"
 import { ChatWithContext } from "../../../context/ChatWithContext"
 import { LoginProfileContext, LoginProfileType } from "../../../context/LoginProfileContext"
-import { qS } from "../../helper"
+import { addMessageItem, qS } from "../../helper"
 import { usePubNub } from "pubnub-react"
 import { ListenerParameters } from "pubnub"
 import { IMessage } from "../../../types"
@@ -12,7 +12,7 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
     // get page for display
     const { isLoading } = useContext(MiscContext)
     // chat with context
-    const { messageItems, setMessageItems, setHistoryMessageLog, 
+    const { messageItems, setMessageItems, historyMessageLog, setHistoryMessageLog, 
         unreadMessageItems, setUnreadMessageItems } = useContext(ChatWithContext)
     // login profile context
     const { isLogin } = useContext(LoginProfileContext)
@@ -63,13 +63,37 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
             message: (data) => {
                 const newMessage: IMessage['messages'][0] = data.message
                 // only get other message
-                if(newMessage.user === isLogin[1].display_name) return
+                if(newMessage.user === isLogin[1].display_name) {
+                    if(messageItems) {
+                        // check if my last message created_at is the same as new message
+                        const getMyMessages = messageItems.map(v => v.id === isLogin[1].id ? v.created_at : null).filter(i => i)
+                        const isSameAsLastMsg = getMyMessages[getMyMessages.length-1] === newMessage.created_at
+                        // message created_at is the same, stop
+                        if(isSameAsLastMsg) return
+                        // message created_at is diff
+                        // append new message
+                        const tempMessages: IMessage['messages'][0] = {
+                            user: newMessage.user,
+                            style: 'justify-end',
+                            text: newMessage.text,
+                            is_image: newMessage.is_image,
+                            time: newMessage.time,
+                            date: newMessage.date,
+                            created_at: newMessage.created_at
+                        }
+                        // check if data null
+                        setMessageItems(data => data ? [...data, tempMessages] : [tempMessages])
+                        // add message to history log
+                        setHistoryMessageLog(data => addMessageItem(data, isLogin[1], chatWith, tempMessages))
+                    }
+                    return
+                }
                 // if new message is from other user OR group
                 // add the chat to unread messages
                 if(newMessage.user !== chatWith.display_name && !(chatWith as any)?.name) {
                     // play message notif sound
                     (qS('#message_notif') as HTMLAudioElement).play()
-                    return setUnreadMessageItems(data => {
+                    setUnreadMessageItems(data => {
                         const displayName = newMessage.group_name || newMessage.user
                         // data > 0
                         if(data) {
@@ -80,6 +104,7 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
                                     ...data, 
                                     {
                                         display_name: displayName, 
+                                        type: newMessage?.group_name ? 'group' : 'user',
                                         unread_messages: [...data[isUserExist].unread_messages, newMessage.text]
                                     }
                                 ]
@@ -90,7 +115,14 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
                             }
                             // no unread message from the user
                             else {
-                                const newData = [...data, {display_name: displayName, unread_messages: [newMessage.text]}]
+                                const newData = [
+                                    ...data, 
+                                    {
+                                        display_name: displayName, 
+                                        type: newMessage?.group_name ? 'group' : 'user',
+                                        unread_messages: [newMessage.text]
+                                    }
+                                ]
                                 return newData
                             }
                         }
@@ -98,11 +130,23 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
                         else {
                             const newData = [{
                                 display_name: displayName,
+                                type: newMessage?.group_name ? 'group' : 'user',
                                 unread_messages: [newMessage.text]
                             }]
                             return newData
                         }
                     })
+                    // add if the user/group is exist 
+                    // (assuming the user already have the history chat)
+                    const isUserGroupExist = historyMessageLog.length === 0 
+                                            ? null
+                                            : historyMessageLog.map(v => v.user_with).indexOf(newMessage.id as string)
+                    // add message to history log
+                    if(isUserGroupExist !== null && isUserGroupExist !== -1) {
+                        const _with = {id: newMessage.id} as LoginProfileType
+                        setHistoryMessageLog(data => addMessageItem(data, isLogin[1], _with, newMessage))
+                    }
+                    return
                 }
                 // play message notif sound
                 (qS('#message_notif') as HTMLAudioElement).play()
@@ -126,7 +170,7 @@ export default function ChattingUser({ chatWith }: {chatWith: LoginProfileType})
             pubsub.unsubscribe({ channels: subsChannels })
             pubsub.removeListener(publishedMessage)
         }
-    }, [chatWith])
+    }, [chatWith, messageItems])
     // image preview params
     const imagePreviewStates = {
         imageChatData: imageChatData,
